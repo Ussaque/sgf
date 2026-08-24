@@ -1,0 +1,31 @@
+# Exemplo de configuração Nginx para o moz-billing-system.
+# Copia para /etc/nginx/sites-available/moz-billing-system, ajusta o domínio,
+# e ativa com: ln -s /etc/nginx/sites-available/moz-billing-system /etc/nginx/sites-enabled/
+
+server {
+    listen 80;
+    server_name your-domain.com;
+
+    # Frontend: build estático do Vite (npm run build -> dist/)
+    root /var/www/moz-billing-system/dist;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Backend: proxy para a API Node/Express (PM2, porta 3001)
+    location /api/ {
+        proxy_pass http://127.0.0.1:3001/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Ficheiros carregados (logótipos)
+    location /uploads/ {
+        proxy_pass http://127.0.0.1:3001/uploads/;
+    }
+}

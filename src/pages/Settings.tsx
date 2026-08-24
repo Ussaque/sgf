@@ -1,0 +1,336 @@
+import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { useCompany } from '@/contexts/CompanyContext';
+import { api } from '@/services/api';
+import type { BankAccount, Company } from '@/types';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from '@/components/ui/form';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { CompanyProfileForm } from '@/components/company-profile-form';
+import { BankAccountsEditor } from '@/components/bank-accounts-editor';
+
+function previewNumber(prefix: string, sequence: number) {
+    const year = new Date().getFullYear();
+    return `${prefix}-${year}-${String(sequence).padStart(3, '0')}`;
+}
+
+type BillingFormValues = {
+    default_tax_rate: number;
+    default_due_days: number;
+    current_invoice_sequence: number;
+    current_receipt_sequence: number;
+    current_quotation_sequence: number;
+    bank_accounts: BankAccount[];
+    mpesa_number: string;
+    emola_number: string;
+    payment_notes: string;
+};
+
+function CompanyTab({ company }: { company: Company }) {
+    const { refreshCompanies } = useCompany();
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Perfil da empresa</CardTitle>
+                <CardDescription>
+                    Estes dados aparecem no cabeçalho das faturas, recibos e cotações
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <CompanyProfileForm company={company} onSaved={refreshCompanies} />
+            </CardContent>
+        </Card>
+    );
+}
+
+function BillingTab({ company }: { company: Company }) {
+    const { refreshCompanies } = useCompany();
+    const form = useForm<BillingFormValues>({
+        defaultValues: {
+            default_tax_rate: company.default_tax_rate ?? 16,
+            default_due_days: company.default_due_days ?? 30,
+            current_invoice_sequence: company.current_invoice_sequence,
+            current_receipt_sequence: company.current_receipt_sequence,
+            current_quotation_sequence: company.current_quotation_sequence,
+            bank_accounts: company.bank_accounts ?? [],
+            mpesa_number: company.mpesa_number ?? '',
+            emola_number: company.emola_number ?? '',
+            payment_notes: company.payment_notes ?? '',
+        },
+    });
+
+    const values = form.watch();
+
+    async function onSubmit(formValues: BillingFormValues) {
+        await api.updateCompany({
+            ...company,
+            default_tax_rate: formValues.default_tax_rate,
+            default_due_days: formValues.default_due_days,
+            current_invoice_sequence: formValues.current_invoice_sequence,
+            current_receipt_sequence: formValues.current_receipt_sequence,
+            current_quotation_sequence: formValues.current_quotation_sequence,
+            bank_accounts: formValues.bank_accounts.filter((a) => a.bank_name || a.account_number),
+            mpesa_number: formValues.mpesa_number || undefined,
+            emola_number: formValues.emola_number || undefined,
+            payment_notes: formValues.payment_notes || undefined,
+        });
+        toast.success('Definições de faturação atualizadas');
+        refreshCompanies();
+    }
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Faturação</CardTitle>
+                <CardDescription>
+                    Valores por omissão para novas faturas e cotações
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-6">
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <FormField
+                                control={form.control}
+                                name="default_tax_rate"
+                                rules={{ required: true, min: 0, max: 100 }}
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>IVA padrão (%)</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="number"
+                                                min={0}
+                                                max={100}
+                                                {...field}
+                                                onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="default_due_days"
+                                rules={{ required: true, min: 0 }}
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Prazo de vencimento padrão (dias)</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="number"
+                                                min={0}
+                                                {...field}
+                                                onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
+                        <div className="grid gap-4 sm:grid-cols-3">
+                            <FormField
+                                control={form.control}
+                                name="current_invoice_sequence"
+                                rules={{ required: true, min: 1 }}
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Próxima fatura</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="number"
+                                                min={1}
+                                                {...field}
+                                                onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                                            />
+                                        </FormControl>
+                                        <p className="text-xs text-muted-foreground">
+                                            {previewNumber('FAT', values.current_invoice_sequence || 1)}
+                                        </p>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="current_receipt_sequence"
+                                rules={{ required: true, min: 1 }}
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Próximo recibo</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="number"
+                                                min={1}
+                                                {...field}
+                                                onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                                            />
+                                        </FormControl>
+                                        <p className="text-xs text-muted-foreground">
+                                            {previewNumber('REC', values.current_receipt_sequence || 1)}
+                                        </p>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="current_quotation_sequence"
+                                rules={{ required: true, min: 1 }}
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Próxima cotação</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="number"
+                                                min={1}
+                                                {...field}
+                                                onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                                            />
+                                        </FormControl>
+                                        <p className="text-xs text-muted-foreground">
+                                            {previewNumber('COT', values.current_quotation_sequence || 1)}
+                                        </p>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
+                        <Separator />
+
+                        <div className="grid gap-1">
+                            <h3 className="text-sm font-medium">Dados de pagamento</h3>
+                            <p className="text-xs text-muted-foreground">
+                                Aparecem no rodapé das faturas e cotações, para o cliente saber como pagar
+                            </p>
+                        </div>
+
+                        <BankAccountsEditor />
+
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <FormField
+                                control={form.control}
+                                name="mpesa_number"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>M-Pesa (opcional)</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="84/85 xxx xxxx" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="emola_number"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>E-Mola (opcional)</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="86/87 xxx xxxx" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <FormField
+                            control={form.control}
+                            name="payment_notes"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Outras instruções de pagamento (opcional)</FormLabel>
+                                    <FormControl>
+                                        <Textarea rows={2} placeholder="ex: PayPal, outro método..." {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <div>
+                            <Button type="submit">Guardar alterações</Button>
+                        </div>
+                    </form>
+                </Form>
+            </CardContent>
+        </Card>
+    );
+}
+
+function AppearanceTab() {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Aparência</CardTitle>
+                <CardDescription>Escolhe como a aplicação se apresenta no teu dispositivo</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ThemeToggle />
+            </CardContent>
+        </Card>
+    );
+}
+
+export default function Settings() {
+    const { hasPermission } = useAuth();
+    const { company } = useCompany();
+    const canManageCompany = hasPermission('ADMIN');
+
+    return (
+        <div className="grid gap-4">
+            <div>
+                <h1 className="text-2xl font-semibold">Definições</h1>
+                <p className="text-sm text-muted-foreground">
+                    Configurações da empresa e da aplicação
+                </p>
+            </div>
+
+            <Tabs defaultValue={canManageCompany ? 'empresa' : 'aparencia'}>
+                <TabsList>
+                    {canManageCompany && <TabsTrigger value="empresa">Empresa</TabsTrigger>}
+                    {canManageCompany && <TabsTrigger value="faturacao">Faturação</TabsTrigger>}
+                    <TabsTrigger value="aparencia">Aparência</TabsTrigger>
+                </TabsList>
+
+                {canManageCompany && company && (
+                    <TabsContent value="empresa">
+                        <CompanyTab key={company.id} company={company} />
+                    </TabsContent>
+                )}
+                {canManageCompany && company && (
+                    <TabsContent value="faturacao">
+                        <BillingTab key={company.id} company={company} />
+                    </TabsContent>
+                )}
+                <TabsContent value="aparencia">
+                    <AppearanceTab />
+                </TabsContent>
+            </Tabs>
+        </div>
+    );
+}

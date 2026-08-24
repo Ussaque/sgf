@@ -1,0 +1,32 @@
+{
+  "rino": {
+    "name": "rino",
+    "description": "Analiza el código y retorna configuración RinoConfig optimizada",
+    "prompt": "Analiza el siguiente contenido del repositorio y el árbol de archivos para entender la estructura del proyecto.\n**CONTEXTO:** [CONTENT]\n**INSTRUCCIONES:**\n- Examina la estructura de archivos y el contenido mostrado\n- Identifica los archivos y carpetas más relevantes para el contexto proporcionado\n- Analiza las dependencias, configuraciones y patrones arquitectónicos\n- Encuentra los componentes clave que necesitan atención para resolver el problema o implementar la mejora\n**RESPUESTA REQUERIDA:**\nRetorna ÚNICAMENTE un JSON válido en formato RinoConfig que incluya:\n- \"includes\": Array con las rutas específicas de archivos/carpetas más relevantes (puede usar patrones glob como \"src/**/*.ts\")\n- \"tokens\": Número apropiado de tokens (50000-200000)\n- \"content\": Porcentaje de contenido apropiado (60-90)\n- \"maxDepth\": Profundidad apropiada para el análisis (1-5)\nEl JSON debe estar optimizado para obtener la información más útil relacionada con el contexto proporcionado.",
+    "suggestedConfig": {
+      "tokens": 1000000,
+      "content": 80,
+      "maxDepth": 10
+    }
+  },
+  "overview": {
+    "name": "overview",
+    "description": "Vista general del proyecto con profundidad limitada",
+    "prompt": "Proporciona una vista general de la estructura del proyecto:\n**ESTRUCTURA DEL PROYECTO:** [CONTENT]\n**ANÁLISIS SOLICITADO:**\n- Arquitectura general y organización\n- Tecnologías principales utilizadas\n- Patrones de estructura identificados\n- Componentes principales del sistema\nMantén el análisis a alto nivel sin profundizar en detalles de implementación.",
+    "suggestedConfig": {
+      "tokens": 1000000,
+      "content": 60,
+      "maxDepth": 10
+    }
+  },
+  "code-review": {
+    "name": "code-review",
+    "description": "Solicita revisión de código enfocada en calidad y mejores prácticas",
+    "prompt": "Revisa el siguiente código y estructura del proyecto para identificar mejoras en calidad, seguridad y mejores prácticas.\n**CONTEXTO ESPECÍFICO:** [CONTENT]\n**ANÁLISIS REQUERIDO:**\n- Examina la arquitectura y patrones utilizados\n- Identifica potenciales problemas de seguridad\n- Evalúa el cumplimiento de mejores prácticas\n- Detecta código duplicado o ineficiente\n- Revisa la estructura de archivos y organización\n**PROPORCIONA:**\n1. **Problemas Críticos:** Issues de seguridad o bugs potenciales\n2. **Mejoras de Arquitectura:** Sugerencias para mejor organización\n3. **Optimizaciones:** Código que puede ser más eficiente\n4. **Mejores Prácticas:** Adherencia a estándares del ecosistema\n5. **Recomendaciones:** Pasos específicos para implementar mejoras\nSé específico con nombres de archivos y líneas de código cuando sea posible."
+  },
+  "debug": {
+    "name": "debug",
+    "description": "Ayuda a identificar y resolver problemas específicos",
+    "prompt": "Analiza el código para ayudar a debuggear y resolver el siguiente problema específico.\n**PROBLEMA A RESOLVER:** [CONTENT]\n**ANÁLISIS DE DEBUG:**\n- Examina los archivos de configuración y dependencias\n- Revisa los logs y manejo de errores\n- Identifica posibles puntos de falla\n- Analiza el flujo de datos y control\n- Busca incompatibilidades o configuraciones incorrectas\n**RESPUESTA ESTRUCTURADA:**\n1. **Diagnóstico:** Posibles causas del problema\n2. **Archivos Relevantes:** Qué archivos revisar específicamente\n3. **Pasos de Debugging:** Cómo reproducir o confirmar el problema\n4. **Soluciones Propuestas:** Fixes concretos con código cuando sea posible\n5. **Prevención:** Cómo evitar este problema en el futuro\nIncluye comandos específicos, snippets de código y referencias exactas a archivos."
+  }
+}

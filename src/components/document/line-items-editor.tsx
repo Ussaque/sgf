@@ -1,0 +1,204 @@
+import { useEffect, useState } from 'react';
+import { useFieldArray, useFormContext, useWatch } from 'react-hook-form';
+import { Plus, Trash2 } from 'lucide-react';
+import { useCompany } from '@/contexts/CompanyContext';
+import { api } from '@/services/api';
+import type { InvoiceItem, Product } from '@/types';
+import { computeTotals } from '@/lib/document-totals';
+import { formatCurrency } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableFooter,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+
+type ItemsFormValues = { items: InvoiceItem[] };
+
+function emptyItem(taxRate = 16): InvoiceItem {
+    return {
+        id: crypto.randomUUID(),
+        description: '',
+        quantity: 1,
+        unit_price: 0,
+        tax_rate: taxRate,
+        total: 0,
+    };
+}
+
+function itemFromProduct(product: Product, fallbackTaxRate: number): InvoiceItem {
+    return {
+        id: crypto.randomUUID(),
+        description: `${product.name} (${product.unit})`,
+        quantity: 1,
+        unit_price: product.unit_price,
+        tax_rate: product.tax_rate ?? fallbackTaxRate,
+        total: 0,
+    };
+}
+
+export function LineItemsEditor() {
+    const { control, register } = useFormContext<ItemsFormValues>();
+    const { fields, append, remove } = useFieldArray({ control, name: 'items' });
+    const items = useWatch({ control, name: 'items' }) ?? [];
+    const totals = computeTotals(items);
+
+    const { companyId, company } = useCompany();
+    const defaultTaxRate = company?.default_tax_rate ?? 16;
+    const [products, setProducts] = useState<Product[]>([]);
+
+    useEffect(() => {
+        if (!companyId) return;
+        api.getProducts(companyId).then(setProducts);
+    }, [companyId]);
+
+    return (
+        <div className="grid gap-2">
+            <div className="overflow-x-auto rounded-md border">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Descrição</TableHead>
+                            <TableHead className="w-20">Qtd.</TableHead>
+                            <TableHead className="w-28">Preço unit.</TableHead>
+                            <TableHead className="w-20">IVA %</TableHead>
+                            <TableHead className="w-28 text-right">Total</TableHead>
+                            <TableHead className="w-10" />
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {fields.map((field, index) => {
+                            const item = items[index];
+                            const lineTotal = item
+                                ? item.quantity * item.unit_price * (1 + item.tax_rate / 100)
+                                : 0;
+                            return (
+                                <TableRow key={field.id}>
+                                    <TableCell>
+                                        <Input
+                                            {...register(`items.${index}.description`, { required: true })}
+                                            placeholder="Descrição do item"
+                                        />
+                                    </TableCell>
+                                    <TableCell>
+                                        <Input
+                                            type="number"
+                                            min={0}
+                                            step="1"
+                                            {...register(`items.${index}.quantity`, {
+                                                valueAsNumber: true,
+                                                min: 0,
+                                            })}
+                                        />
+                                    </TableCell>
+                                    <TableCell>
+                                        <Input
+                                            type="number"
+                                            min={0}
+                                            step="0.01"
+                                            {...register(`items.${index}.unit_price`, {
+                                                valueAsNumber: true,
+                                                min: 0,
+                                            })}
+                                        />
+                                    </TableCell>
+                                    <TableCell>
+                                        <Input
+                                            type="number"
+                                            min={0}
+                                            step="1"
+                                            {...register(`items.${index}.tax_rate`, {
+                                                valueAsNumber: true,
+                                                min: 0,
+                                            })}
+                                        />
+                                    </TableCell>
+                                    <TableCell className="text-right tabular-nums">
+                                        {formatCurrency(lineTotal)}
+                                    </TableCell>
+                                    <TableCell>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon-sm"
+                                            onClick={() => remove(index)}
+                                            disabled={fields.length === 1}
+                                        >
+                                            <Trash2 />
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            );
+                        })}
+                    </TableBody>
+                    <TableFooter>
+                        <TableRow>
+                            <TableCell colSpan={4}>Subtotal</TableCell>
+                            <TableCell colSpan={2} className="text-right">
+                                {formatCurrency(totals.subtotal)}
+                            </TableCell>
+                        </TableRow>
+                        <TableRow>
+                            <TableCell colSpan={4}>IVA</TableCell>
+                            <TableCell colSpan={2} className="text-right">
+                                {formatCurrency(totals.tax_total)}
+                            </TableCell>
+                        </TableRow>
+                        <TableRow>
+                            <TableCell colSpan={4} className="font-medium">
+                                Total
+                            </TableCell>
+                            <TableCell colSpan={2} className="text-right font-medium">
+                                {formatCurrency(totals.total)}
+                            </TableCell>
+                        </TableRow>
+                    </TableFooter>
+                </Table>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => append(emptyItem(defaultTaxRate))}
+                >
+                    <Plus /> Adicionar linha
+                </Button>
+                {products.length > 0 && (
+                    <Select
+                        value=""
+                        onValueChange={(productId) => {
+                            const product = products.find((p) => p.id === productId);
+                            if (product) append(itemFromProduct(product, defaultTaxRate));
+                        }}
+                    >
+                        <SelectTrigger size="sm" className="w-56">
+                            <SelectValue placeholder="Adicionar do catálogo..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {products.map((product) => (
+                                <SelectItem key={product.id} value={product.id}>
+                                    {product.name} ({product.unit}) — {formatCurrency(product.unit_price)}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                )}
+            </div>
+        </div>
+    );
+}
+
+export { emptyItem };

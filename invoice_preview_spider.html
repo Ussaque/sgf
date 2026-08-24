@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Helvetica', Arial, sans-serif;
+  background: var(--surface-0);
+  padding: 20px;
+}
+
+.invoice-container {
+  background: white;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 40px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  font-size: 10px;
+  line-height: 1.4;
+  color: #333;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 25px;
+  border-bottom: 2px solid #000;
+  padding-bottom: 15px;
+}
+
+.header-left h1 {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 12px;
+}
+
+.header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.header-info-row {
+  display: flex;
+  gap: 15px;
+}
+
+.header-info-row strong {
+  min-width: 140px;
+}
+
+.header-right {
+  text-align: right;
+  min-width: 140px;
+}
+
+.header-right h2 {
+  font-size: 12px;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.header-right p {
+  font-size: 9px;
+  margin-bottom: 2px;
+}
+
+.logo-placeholder {
+  width: 100px;
+  height: 60px;
+  border: 1px solid #ddd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  font-size: 8px;
+  margin-left: 20px;
+}
+
+.section {
+  margin-bottom: 18px;
+  display: flex;
+  gap: 20px;
+}
+
+.section-column {
+  flex: 1;
+}
+
+.section-title {
+  font-size: 10px;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  color: #000;
+}
+
+.section-content {
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.section-content p {
+  margin-bottom: 2px;
+}
+
+.divider {
+  border-bottom: 1px solid #ddd;
+  padding-top: 12px;
+  margin-bottom: 12px;
+}
+
+.table {
+  width: 100%;
+  margin: 20px 0;
+  border: 1px solid #000;
+  border-collapse: collapse;
+}
+
+.table-header {
+  background: #f5f5f5;
+  font-weight: bold;
+  font-size: 9px;
+}
+
+.table th {
+  padding: 8px 5px;
+  border-bottom: 1px solid #000;
+  text-align: left;
+  font-weight: bold;
+}
+
+.table td {
+  padding: 8px 5px;
+  border-bottom: 1px solid #ddd;
+  font-size: 9px;
+}
+
+.col-nr {
+  width: 5%;
+  text-align: center;
+}
+
+.col-desc {
+  width: 45%;
+  text-align: left;
+}
+
+.col-qtd {
+  width: 12%;
+  text-align: center;
+}
+
+.col-price {
+  width: 15%;
+  text-align: right;
+  font-family: 'Courier New', monospace;
+}
+
+.col-iva {
+  width: 8%;
+  text-align: center;
+}
+
+.col-total {
+  width: 15%;
+  text-align: right;
+  font-family: 'Courier New', monospace;
+}
+
+.summary {
+  display: flex;
+  justify-content: flex-end;
+  margin: 20px 0;
+}
+
+.summary-col {
+  width: 250px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #ddd;
+  padding: 6px 0;
+  font-size: 9px;
+}
+
+.summary-total {
+  display: flex;
+  justify-content: space-between;
+  border-top: 2px solid #000;
+  border-bottom: 2px solid #000;
+  padding: 8px 0;
+  font-size: 11px;
+  font-weight: bold;
+  margin-top: 6px;
+}
+
+.summary-label {
+  text-align: left;
+}
+
+.summary-value {
+  text-align: right;
+  font-family: 'Courier New', monospace;
+  min-width: 80px;
+}
+
+.reference {
+  font-size: 8px;
+  color: #555;
+  margin-bottom: 15px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #ddd;
+  line-height: 1.4;
+}
+
+.payment {
+  margin-top: 15px;
+  padding-top: 10px;
+  border-top: 1px solid #ddd;
+  font-size: 8px;
+}
+
+.payment-title {
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.payment-item {
+  margin-bottom: 2px;
+}
+
+.footer {
+  margin-top: 20px;
+  border-top: 1px solid #ddd;
+  padding-top: 8px;
+  text-align: center;
+  font-size: 7px;
+  color: #999;
+}
+
+.empty-row td {
+  height: 20px;
+  background: white;
+}
+
+@media print {
+  body {
+    padding: 0;
+    background: white;
+  }
+  .invoice-container {
+    max-width: 100%;
+    box-shadow: none;
+    padding: 0;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="invoice-container">
+  <!-- CABEÇALHO -->
+  <div class="header">
+    <div class="header-left">
+      <h1>Factura[Original]</h1>
+      <div class="header-info">
+        <div class="header-info-row">
+          <strong>Factura Nr</strong>
+          <span>FT /49/2026</span>
+        </div>
+        <div class="header-info-row">
+          <strong>Data de emissão</strong>
+          <span>2026-07-20</span>
+        </div>
+        <div class="header-info-row">
+          <strong>Data de vencimento</strong>
+          <span>2026-08-05</span>
+        </div>
+        <div class="header-info-row">
+          <strong>Condição de pagamento</strong>
+          <span>16 dias</span>
+        </div>
+        <div class="header-info-row">
+          <strong>Emitida por</strong>
+          <span>demo</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="logo-placeholder">LOGO</div>
+    </div>
+  </div>
+
+  <!-- DADOS DAS PARTES -->
+  <div class="section">
+    <div class="section-column">
+      <div class="section-title">Spider Segurança</div>
+      <div class="section-content">
+        <p>Endereço: Av. Marien Ngoambi 1308, 1º Andar, D</p>
+        <p>Nuit: 401587144</p>
+        <p>Contacto: 258845379883</p>
+        <p>Email: info@spiderseguranca.co.mz</p>
+      </div>
+    </div>
+    <div class="section-column">
+      <div class="section-title">Para</div>
+      <div class="section-content">
+        <p>AdRM-Aguas da Região Metropolitana de Maputo, SA</p>
+        <p>Endereço: Av. Eduardo Mondlane Nº 1351, 5º Andar</p>
+        <p>Nuit: 401337881</p>
+        <p>Contacto: 845001012</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- REFERÊNCIA -->
+  <div class="reference">
+    Referente a prestação de serviços de segurança na Cidade de Maputo e ETA de Curumana, com base no contracto nº 05/AdRMM-DC/S/2026
+  </div>
+
+  <!-- TABELA DE ITENS -->
+  <table class="table">
+    <thead class="table-header">
+      <tr>
+        <th class="col-nr">Nr.</th>
+        <th class="col-desc">Descrição</th>
+        <th class="col-qtd">Qtd</th>
+        <th class="col-price">Preço unitário</th>
+        <th class="col-iva">IVA</th>
+        <th class="col-total">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="col-nr">1</td>
+        <td class="col-desc">Lote III ETA de Corrumana, Homens não Armados</td>
+        <td class="col-qtd">62</td>
+        <td class="col-price">10.900,00 Mt</td>
+        <td class="col-iva">16%</td>
+        <td class="col-total">675.800,00 Mt</td>
+      </tr>
+      <tr>
+        <td class="col-nr">2</td>
+        <td class="col-desc">Lote III ETA de Corrumana, Homens Armados</td>
+        <td class="col-qtd">8</td>
+        <td class="col-price">11.800,00 Mt</td>
+        <td class="col-iva">16%</td>
+        <td class="col-total">94.400,00 Mt</td>
+      </tr>
+      <tr>
+        <td class="col-nr">3</td>
+        <td class="col-desc">Lote I Cidade de Maputo, Homens não Armados</td>
+        <td class="col-qtd">112</td>
+        <td class="col-price">11.500,00 Mt</td>
+        <td class="col-iva">16%</td>
+        <td class="col-total">1.288.000,00 Mt</td>
+      </tr>
+      <tr>
+        <td class="col-nr">4</td>
+        <td class="col-desc">Lote I Cidade de Maputo, Homens Armados</td>
+        <td class="col-qtd">48</td>
+        <td class="col-price">12.000,00 Mt</td>
+        <td class="col-iva">16%</td>
+        <td class="col-total">576.000,00 Mt</td>
+      </tr>
+      <tr class="empty-row">
+        <td class="col-nr"></td>
+        <td class="col-desc"></td>
+        <td class="col-qtd"></td>
+        <td class="col-price"></td>
+        <td class="col-iva"></td>
+        <td class="col-total"></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- RESUMO FINANCEIRO -->
+  <div class="summary">
+    <div class="summary-col">
+      <div class="summary-row">
+        <span class="summary-label">Subtotal</span>
+        <span class="summary-value">2.634.200,00 Mt</span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-label">Total impostos</span>
+        <span class="summary-value">421.472,00 Mt</span>
+      </div>
+      <div class="summary-total">
+        <span class="summary-label">Total</span>
+        <span class="summary-value">3.055.672,00 Mt</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FORMAS DE PAGAMENTO -->
+  <div class="payment">
+    <div class="payment-title">Formas de pagamento:</div>
+    <div class="payment-item">Número da Conta -913345211</div>
+    <div class="payment-item">NIB - 000100000091334521157</div>
+    <div class="payment-item">IBAN - MZ59000100000091334521157</div>
+    <div class="payment-item">Swift - BIMOMZMXXXX</div>
+  </div>
+
+  <!-- RODAPÉ -->
+  <div class="footer">
+    Processado por computador © Innovative Tech - 2011
+  </div>
+</div>
+
+</body>
+</html>
