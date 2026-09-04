@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
-import { prisma } from '../prisma';
-import { requireAuth, signToken } from '../middleware/auth';
-import { mapUser } from '../serialize';
+import { pool } from '../db';
+import { requireAuth, signToken, loadAllowedCompanyIds } from '../middleware/auth';
+import { mapUser } from '../rows';
 
 export const authRouter = Router();
 
@@ -12,23 +12,20 @@ authRouter.post('/login', async (req, res) => {
         return res.status(400).json({ error: 'Email e password são obrigatórios' });
     }
 
-    const user = await prisma.user.findUnique({
-        where: { email },
-        include: { allowedCompanies: true },
-    });
-    if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+    const [rows] = await pool.query<any[]>('SELECT * FROM users WHERE email = ?', [email]);
+    const user = rows[0];
+    if (!user || !(await bcrypt.compare(password, user.password_hash))) {
         return res.status(401).json({ error: 'Credenciais inválidas' });
     }
 
     const token = signToken(user.id);
-    res.json({ token, user: mapUser(user) });
+    const allowedCompanyIds = await loadAllowedCompanyIds(user.id);
+    res.json({ token, user: mapUser(user, allowedCompanyIds) });
 });
 
 authRouter.get('/me', requireAuth, async (req, res) => {
-    const user = await prisma.user.findUnique({
-        where: { id: req.user!.id },
-        include: { allowedCompanies: true },
-    });
+    const [rows] = await pool.query<any[]>('SELECT * FROM users WHERE id = ?', [req.user!.id]);
+    const user = rows[0];
     if (!user) return res.status(404).json({ error: 'Utilizador não encontrado' });
-    res.json(mapUser(user));
+    res.json(mapUser(user, req.user!.allowedCompanyIds));
 });

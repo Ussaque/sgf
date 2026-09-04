@@ -5,25 +5,20 @@
   "type": "commonjs",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && node -e \"require('fs').copyFileSync('src/schema.sql','dist/schema.sql')\"",
     "start": "node dist/index.js",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:generate": "prisma generate",
-    "prisma:studio": "prisma studio",
-    "seed": "tsx prisma/seed.ts"
-  },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "migrate": "tsx src/migrate.ts",
+    "seed": "tsx src/seed.ts"
   },
   "dependencies": {
-    "@prisma/client": "^6.3.1",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "express-async-errors": "^3.1.1",
     "jsonwebtoken": "^9.0.2",
-    "multer": "^2.2.0"
+    "multer": "^2.2.0",
+    "mysql2": "^3.24.3"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -32,7 +27,6 @@
     "@types/jsonwebtoken": "^9.0.7",
     "@types/multer": "^2.2.0",
     "@types/node": "^24.10.0",
-    "prisma": "^6.3.1",
     "tsx": "^4.19.2",
     "typescript": "~5.9.3"
   }

@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import { prisma } from '../prisma';
+import { pool } from '../db';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 const ROLES = ['SUPER_ADMIN', 'ADMIN', 'USER', 'VIEWER'] as const;
@@ -28,6 +28,14 @@ export function signToken(userId: string): string {
     return jwt.sign({ sub: userId }, JWT_SECRET, { expiresIn: '7d' });
 }
 
+export async function loadAllowedCompanyIds(userId: string): Promise<string[]> {
+    const [rows] = await pool.query<any[]>(
+        'SELECT company_id FROM user_company_access WHERE user_id = ?',
+        [userId]
+    );
+    return rows.map((r) => r.company_id);
+}
+
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
     const header = req.headers.authorization;
     if (!header?.startsWith('Bearer ')) {
@@ -36,19 +44,17 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
 
     try {
         const payload = jwt.verify(header.slice(7), JWT_SECRET) as { sub: string };
-        const user = await prisma.user.findUnique({
-            where: { id: payload.sub },
-            include: { allowedCompanies: true },
-        });
+        const [rows] = await pool.query<any[]>('SELECT * FROM users WHERE id = ?', [payload.sub]);
+        const user = rows[0];
         if (!user) return res.status(401).json({ error: 'Utilizador não encontrado' });
 
         req.user = {
             id: user.id,
-            organizationId: user.organizationId,
+            organizationId: user.organization_id,
             name: user.name,
             email: user.email,
             role: user.role,
-            allowedCompanyIds: user.allowedCompanies.map((a) => a.companyId),
+            allowedCompanyIds: await loadAllowedCompanyIds(user.id),
         };
         next();
     } catch {

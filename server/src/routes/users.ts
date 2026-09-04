@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { prisma } from '../prisma';
-import { requireAuth, requireRole } from '../middleware/auth';
-import { mapUser } from '../serialize';
+import { pool } from '../db';
+import { requireAuth, requireRole, loadAllowedCompanyIds } from '../middleware/auth';
+import { mapUser } from '../rows';
 
 const ROLES = ['SUPER_ADMIN', 'ADMIN', 'USER', 'VIEWER'] as const;
 function roleIndex(role: string) {
@@ -13,11 +13,13 @@ export const usersRouter = Router();
 usersRouter.use(requireAuth);
 
 usersRouter.get('/', async (req, res) => {
-    const users = await prisma.user.findMany({
-        where: { organizationId: req.user!.organizationId },
-        include: { allowedCompanies: true },
-    });
-    res.json(users.map(mapUser));
+    const [rows] = await pool.query<any[]>('SELECT * FROM users WHERE organization_id = ?', [
+        req.user!.organizationId,
+    ]);
+    const users = await Promise.all(
+        rows.map(async (u) => mapUser(u, await loadAllowedCompanyIds(u.id)))
+    );
+    res.json(users);
 });
 
 usersRouter.patch('/:id', requireRole('ADMIN'), async (req, res) => {
@@ -26,8 +28,9 @@ usersRouter.patch('/:id', requireRole('ADMIN'), async (req, res) => {
         return res.status(400).json({ error: 'Role inválido' });
     }
 
-    const target = await prisma.user.findUnique({ where: { id: req.params.id } });
-    if (!target || target.organizationId !== req.user!.organizationId) {
+    const [rows] = await pool.query<any[]>('SELECT * FROM users WHERE id = ?', [req.params.id]);
+    const target = rows[0];
+    if (!target || target.organization_id !== req.user!.organizationId) {
         return res.status(404).json({ error: 'Utilizador não encontrado' });
     }
     if (target.id === req.user!.id) {
@@ -40,10 +43,7 @@ usersRouter.patch('/:id', requireRole('ADMIN'), async (req, res) => {
         return res.status(403).json({ error: 'Não podes atribuir um role superior ao teu' });
     }
 
-    const updated = await prisma.user.update({
-        where: { id: target.id },
-        data: { role: role as (typeof ROLES)[number] },
-        include: { allowedCompanies: true },
-    });
-    res.json(mapUser(updated));
+    await pool.query('UPDATE users SET role = ? WHERE id = ?', [role, target.id]);
+    const allowedCompanyIds = await loadAllowedCompanyIds(target.id);
+    res.json(mapUser({ ...target, role }, allowedCompanyIds));
 });

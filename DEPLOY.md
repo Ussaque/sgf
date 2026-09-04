@@ -48,8 +48,8 @@ cd server
 npm ci
 cp .env.example .env
 nano .env   # DATABASE_URL com o utilizador mbs_app, JWT_SECRET forte e aleatório, CORS_ORIGIN com o teu domínio
-npx prisma migrate deploy   # aplica as migrations (nunca uses "migrate dev" em produção)
-npx prisma db seed          # só na primeira vez, para os dados iniciais
+npm run migrate   # cria as tabelas (idempotente, podes correr outra vez sem problema)
+npm run seed      # só na primeira vez, para os dados iniciais
 npm run build
 
 pm2 start ecosystem.config.js
@@ -109,7 +109,7 @@ git pull
 
 cd server
 npm ci
-npx prisma migrate deploy   # só se houver migrations novas
+npm run migrate   # aplica alterações novas ao schema.sql, se houver
 npm run build
 pm2 restart moz-billing-api
 
