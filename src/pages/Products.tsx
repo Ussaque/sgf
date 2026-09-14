@@ -7,6 +7,7 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { api } from '@/services/api';
 import type { Product } from '@/types';
 import { formatCurrency } from '@/lib/utils';
+import { generateId } from '@/lib/uuid';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -135,7 +136,7 @@ export default function Products() {
             toast.success('Produto/serviço atualizado com sucesso');
         } else {
             await api.createProduct({
-                id: crypto.randomUUID(),
+                id: generateId(),
                 company_id: companyId,
                 name: values.name,
                 description: values.description || undefined,

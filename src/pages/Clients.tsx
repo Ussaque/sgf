@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { api } from '@/services/api';
 import type { Client } from '@/types';
+import { generateId } from '@/lib/uuid';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -125,7 +126,7 @@ export default function Clients() {
             toast.success('Cliente atualizado com sucesso');
         } else {
             await api.createClient({
-                id: crypto.randomUUID(),
+                id: generateId(),
                 company_id: companyId,
                 name: values.name,
                 nuit: values.nuit,

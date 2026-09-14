@@ -1,6 +1,7 @@
 import { useFieldArray, useFormContext } from 'react-hook-form';
 import { Plus, Trash2 } from 'lucide-react';
 import type { BankAccount } from '@/types';
+import { generateId } from '@/lib/uuid';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,7 +12,7 @@ type AccountsFormValues = { bank_accounts: BankAccount[] };
 
 export function emptyBankAccount(): BankAccount {
     return {
-        id: crypto.randomUUID(),
+        id: generateId(),
         bank_name: '',
         account_holder: '',
         account_number: '',

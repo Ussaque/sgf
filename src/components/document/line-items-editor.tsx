@@ -6,6 +6,7 @@ import { api } from '@/services/api';
 import type { InvoiceItem, Product } from '@/types';
 import { computeTotals } from '@/lib/document-totals';
 import { formatCurrency } from '@/lib/utils';
+import { generateId } from '@/lib/uuid';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -23,7 +24,7 @@ type ItemsFormValues = { items: InvoiceItem[] };
 
 function emptyItem(taxRate = 16): InvoiceItem {
     return {
-        id: crypto.randomUUID(),
+        id: generateId(),
         description: '',
         quantity: 1,
         unit_price: 0,
@@ -34,7 +35,7 @@ function emptyItem(taxRate = 16): InvoiceItem {
 
 function itemFromProduct(product: Product, fallbackTaxRate: number): InvoiceItem {
     return {
-        id: crypto.randomUUID(),
+        id: generateId(),
         description: `${product.name} (${product.unit})`,
         quantity: 1,
         unit_price: product.unit_price,
