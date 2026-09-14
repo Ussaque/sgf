@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -63,6 +63,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { LineItemsEditor, emptyItem } from '@/components/document/line-items-editor';
+import { DocumentFilters, ALL_FILTER_VALUE } from '@/components/document/document-filters';
 import { DatePicker } from '@/components/date-picker';
 
 const STATUS_VARIANT: Record<QuotationStatus, 'default' | 'secondary' | 'destructive' | 'outline'> = {
@@ -98,6 +99,12 @@ export default function Quotations() {
     const [converting, setConverting] = useState<string | null>(null);
     const [editingQuotation, setEditingQuotation] = useState<Quotation | null>(null);
     const [deletingQuotation, setDeletingQuotation] = useState<Quotation | null>(null);
+    const [convertingQuotation, setConvertingQuotation] = useState<Quotation | null>(null);
+    const [search, setSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState(ALL_FILTER_VALUE);
+    const [clientFilter, setClientFilter] = useState(ALL_FILTER_VALUE);
+    const [dateFrom, setDateFrom] = useState<string | undefined>();
+    const [dateTo, setDateTo] = useState<string | undefined>();
 
     const form = useForm<QuotationFormValues>({
         defaultValues: {
@@ -126,6 +133,37 @@ export default function Quotations() {
 
     function clientName(id: string) {
         return clients.find((c) => c.id === id)?.name ?? '—';
+    }
+
+    const filteredQuotations = useMemo(() => {
+        const term = search.trim().toLowerCase();
+        return quotations.filter((quotation) => {
+            if (statusFilter !== ALL_FILTER_VALUE && quotation.status !== statusFilter) return false;
+            if (clientFilter !== ALL_FILTER_VALUE && quotation.client_id !== clientFilter) return false;
+            if (dateFrom && quotation.date.slice(0, 10) < dateFrom) return false;
+            if (dateTo && quotation.date.slice(0, 10) > dateTo) return false;
+            if (term) {
+                const haystack = `${quotation.number} ${clientName(quotation.client_id)}`.toLowerCase();
+                if (!haystack.includes(term)) return false;
+            }
+            return true;
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [quotations, clients, search, statusFilter, clientFilter, dateFrom, dateTo]);
+
+    const filtersActive =
+        search !== '' ||
+        statusFilter !== ALL_FILTER_VALUE ||
+        clientFilter !== ALL_FILTER_VALUE ||
+        !!dateFrom ||
+        !!dateTo;
+
+    function clearFilters() {
+        setSearch('');
+        setStatusFilter(ALL_FILTER_VALUE);
+        setClientFilter(ALL_FILTER_VALUE);
+        setDateFrom(undefined);
+        setDateTo(undefined);
     }
 
     function openCreateDialog() {
@@ -208,16 +246,18 @@ export default function Quotations() {
         }
     }
 
-    async function handleConvert(quotation: Quotation) {
-        setConverting(quotation.id);
+    async function handleConvert() {
+        if (!convertingQuotation) return;
+        setConverting(convertingQuotation.id);
         try {
-            const invoice = await api.convertQuotationToInvoice(quotation.id);
+            const invoice = await api.convertQuotationToInvoice(convertingQuotation.id);
             toast.success(`Fatura ${invoice.number} criada a partir da cotação`);
             navigate('/faturas');
         } catch (error) {
             toast.error(error instanceof Error ? error.message : 'Erro ao converter cotação');
         } finally {
             setConverting(null);
+            setConvertingQuotation(null);
         }
     }
 
@@ -333,9 +373,30 @@ export default function Quotations() {
             <Card>
                 <CardHeader>
                     <CardTitle>Todas as cotações</CardTitle>
-                    <CardDescription>{quotations.length} cotação(ões)</CardDescription>
+                    <CardDescription>
+                        {filtersActive
+                            ? `${filteredQuotations.length} de ${quotations.length} cotação(ões)`
+                            : `${quotations.length} cotação(ões)`}
+                    </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="grid gap-4">
+                    <DocumentFilters
+                        search={search}
+                        onSearchChange={setSearch}
+                        searchPlaceholder="Pesquisar por número ou cliente..."
+                        status={statusFilter}
+                        onStatusChange={setStatusFilter}
+                        statusOptions={Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label }))}
+                        clientId={clientFilter}
+                        onClientChange={setClientFilter}
+                        clients={clients}
+                        dateFrom={dateFrom}
+                        onDateFromChange={setDateFrom}
+                        dateTo={dateTo}
+                        onDateToChange={setDateTo}
+                        onClear={clearFilters}
+                        active={filtersActive}
+                    />
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -348,7 +409,7 @@ export default function Quotations() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {quotations.map((quotation) => (
+                            {filteredQuotations.map((quotation) => (
                                 <TableRow key={quotation.id}>
                                     <TableCell className="font-medium">{quotation.number}</TableCell>
                                     <TableCell>{clientName(quotation.client_id)}</TableCell>
@@ -384,7 +445,7 @@ export default function Quotations() {
                                                         size="icon-sm"
                                                         title="Converter em fatura"
                                                         disabled={converting === quotation.id}
-                                                        onClick={() => handleConvert(quotation)}
+                                                        onClick={() => setConvertingQuotation(quotation)}
                                                     >
                                                         <ArrowRightLeft />
                                                     </Button>
@@ -404,10 +465,12 @@ export default function Quotations() {
                                     </TableCell>
                                 </TableRow>
                             ))}
-                            {quotations.length === 0 && (
+                            {filteredQuotations.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={6} className="text-center text-muted-foreground">
-                                        Ainda não há cotações criadas.
+                                        {quotations.length === 0
+                                            ? 'Ainda não há cotações criadas.'
+                                            : 'Nenhuma cotação corresponde aos filtros.'}
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -431,6 +494,25 @@ export default function Quotations() {
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
                         <AlertDialogAction onClick={handleDelete}>Eliminar</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog
+                open={!!convertingQuotation}
+                onOpenChange={(isOpen) => !isOpen && setConvertingQuotation(null)}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Converter em fatura</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Tens a certeza que queres converter a cotação {convertingQuotation?.number} numa
+                            fatura? Esta ação não pode ser desfeita e a cotação passa a estado Aceite.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleConvert}>Converter</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

@@ -29,6 +29,7 @@ export function mapCompany(c: any, bankAccounts: any[] = []) {
         phone: opt(c.phone),
         logo_url: opt(c.logo_url),
         brand_color: opt(c.brand_color),
+        color_theme: opt(c.color_theme),
         default_tax_rate: opt(c.default_tax_rate),
         default_due_days: opt(c.default_due_days),
         bank_accounts: bankAccounts.map(mapBankAccount),

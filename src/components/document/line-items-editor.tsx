@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useFieldArray, useFormContext, useWatch } from 'react-hook-form';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Search, Trash2 } from 'lucide-react';
 import { useCompany } from '@/contexts/CompanyContext';
 import { api } from '@/services/api';
 import type { InvoiceItem, Product } from '@/types';
@@ -8,13 +8,7 @@ import { computeTotals } from '@/lib/document-totals';
 import { formatCurrency } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
     Table,
     TableBody,
@@ -47,6 +41,73 @@ function itemFromProduct(product: Product, fallbackTaxRate: number): InvoiceItem
         tax_rate: product.tax_rate ?? fallbackTaxRate,
         total: 0,
     };
+}
+
+function ProductPicker({ products, onSelect }: { products: Product[]; onSelect: (product: Product) => void }) {
+    const [open, setOpen] = useState(false);
+    const [search, setSearch] = useState('');
+
+    const filtered = useMemo(() => {
+        const term = search.trim().toLowerCase();
+        if (!term) return products;
+        return products.filter((product) =>
+            `${product.name} ${product.description ?? ''} ${product.unit}`.toLowerCase().includes(term)
+        );
+    }, [products, search]);
+
+    return (
+        <Popover
+            open={open}
+            onOpenChange={(isOpen) => {
+                setOpen(isOpen);
+                if (!isOpen) setSearch('');
+            }}
+        >
+            <PopoverTrigger
+                render={
+                    <Button type="button" variant="outline" size="sm">
+                        <Plus /> Adicionar do catálogo...
+                    </Button>
+                }
+            />
+            <PopoverContent className="w-72 p-0" align="start">
+                <div className="flex items-center gap-2 border-b px-2.5 py-2">
+                    <Search className="size-4 shrink-0 text-muted-foreground" />
+                    <Input
+                        autoFocus
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Pesquisar produto ou serviço..."
+                        className="h-7 border-0 px-0 shadow-none focus-visible:ring-0"
+                    />
+                </div>
+                <div className="max-h-64 overflow-y-auto p-1">
+                    {filtered.map((product) => (
+                        <button
+                            key={product.id}
+                            type="button"
+                            onClick={() => {
+                                onSelect(product);
+                                setOpen(false);
+                                setSearch('');
+                            }}
+                            className="flex w-full flex-col items-start gap-0.5 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent"
+                        >
+                            <span className="font-medium">{product.name}</span>
+                            <span className="text-xs text-muted-foreground">
+                                {product.unit} — {formatCurrency(product.unit_price)}
+                            </span>
+                        </button>
+                    ))}
+                    {filtered.length === 0 && (
+                        <p className="px-2 py-3 text-center text-sm text-muted-foreground">
+                            Nenhum item encontrado.
+                        </p>
+                    )}
+                </div>
+            </PopoverContent>
+        </Popover>
+    );
 }
 
 export function LineItemsEditor() {
@@ -177,24 +238,10 @@ export function LineItemsEditor() {
                     <Plus /> Adicionar linha
                 </Button>
                 {products.length > 0 && (
-                    <Select
-                        value=""
-                        onValueChange={(productId) => {
-                            const product = products.find((p) => p.id === productId);
-                            if (product) append(itemFromProduct(product, defaultTaxRate));
-                        }}
-                    >
-                        <SelectTrigger size="sm" className="w-56">
-                            <SelectValue placeholder="Adicionar do catálogo..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {products.map((product) => (
-                                <SelectItem key={product.id} value={product.id}>
-                                    {product.name} ({product.unit}) — {formatCurrency(product.unit_price)}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <ProductPicker
+                        products={products}
+                        onSelect={(product) => append(itemFromProduct(product, defaultTaxRate))}
+                    />
                 )}
             </div>
         </div>

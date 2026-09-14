@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
@@ -78,6 +78,7 @@ export default function Products() {
     const [open, setOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
+    const [search, setSearch] = useState('');
 
     const form = useForm<ProductFormValues>({ defaultValues: EMPTY_FORM });
 
@@ -85,6 +86,14 @@ export default function Products() {
         if (!companyId) return;
         setProducts(await api.getProducts(companyId));
     }
+
+    const filteredProducts = useMemo(() => {
+        const term = search.trim().toLowerCase();
+        if (!term) return products;
+        return products.filter((product) =>
+            `${product.name} ${product.description ?? ''} ${product.unit}`.toLowerCase().includes(term)
+        );
+    }, [products, search]);
 
     useEffect(() => {
         refresh();
@@ -282,9 +291,19 @@ export default function Products() {
             <Card>
                 <CardHeader>
                     <CardTitle>Todos os itens</CardTitle>
-                    <CardDescription>{products.length} item(ns) no catálogo</CardDescription>
+                    <CardDescription>
+                        {search
+                            ? `${filteredProducts.length} de ${products.length} item(ns) no catálogo`
+                            : `${products.length} item(ns) no catálogo`}
+                    </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="grid gap-4">
+                    <Input
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Pesquisar por nome, descrição ou unidade..."
+                        className="max-w-sm"
+                    />
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -296,7 +315,7 @@ export default function Products() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {products.map((product) => (
+                            {filteredProducts.map((product) => (
                                 <TableRow key={product.id}>
                                     <TableCell className="font-medium">
                                         {product.name}
@@ -337,10 +356,12 @@ export default function Products() {
                                     )}
                                 </TableRow>
                             ))}
-                            {products.length === 0 && (
+                            {filteredProducts.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={5} className="text-center text-muted-foreground">
-                                        Ainda não há produtos ou serviços no catálogo.
+                                        {products.length === 0
+                                            ? 'Ainda não há produtos ou serviços no catálogo.'
+                                            : 'Nenhum item corresponde à pesquisa.'}
                                     </TableCell>
                                 </TableRow>
                             )}

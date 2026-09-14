@@ -1,6 +1,8 @@
+import type { Ref } from 'react';
 import type { Client, Company, InvoiceItem } from '@/types';
 import { computeTotals } from '@/lib/document-totals';
-import { darkenForText, formatCurrency, formatDate } from '@/lib/utils';
+import { cn, darkenForText, formatCurrency, formatDate } from '@/lib/utils';
+import { printStyles } from './print-styles';
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
     CASH: 'Dinheiro',
@@ -35,6 +37,7 @@ interface PrintableDocumentProps {
     stamp?: string;
     /** Small status badge shown next to the document type, e.g. "Paga", "Atrasada". */
     statusLabel?: string;
+    ref?: Ref<HTMLDivElement>;
 }
 
 function daysBetween(from: string, to: string): number {
@@ -43,6 +46,7 @@ function daysBetween(from: string, to: string): number {
 }
 
 export function PrintableDocument({
+    ref,
     documentType,
     company,
     client,
@@ -60,16 +64,25 @@ export function PrintableDocument({
     const accentColor = company.brand_color || 'var(--primary)';
     const accentTextColor = company.brand_color ? darkenForText(company.brand_color) : accentColor;
     const totals = items ? computeTotals(items) : null;
-    const hasPaymentInfo = Boolean(
-        (company.bank_accounts && company.bank_accounts.length > 0) ||
-            company.mpesa_number ||
-            company.emola_number ||
-            company.payment_notes
-    );
+    const hasPaymentInfo =
+        documentType !== 'RECIBO' &&
+        Boolean(
+            (company.bank_accounts && company.bank_accounts.length > 0) ||
+                company.mpesa_number ||
+                company.emola_number ||
+                company.payment_notes
+        );
     const termDays = secondaryDate ? daysBetween(date, secondaryDate.value) : null;
 
     return (
-        <div className="print-document relative mx-auto max-w-3xl bg-white p-10 text-sm text-neutral-900">
+        <div
+            ref={ref}
+            className={cn(
+                'print-document relative mx-auto max-w-3xl bg-white p-10 text-sm text-neutral-900',
+                documentType === 'RECIBO' && 'flex min-h-[273mm] flex-col'
+            )}
+        >
+            <style>{printStyles}</style>
             {stamp && (
                 <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden">
                     <span className="rotate-[-30deg] border-4 border-red-600 px-8 py-2 text-5xl font-bold tracking-widest text-red-600 opacity-40">
@@ -78,6 +91,7 @@ export function PrintableDocument({
                 </div>
             )}
 
+            <div className="print-header-block">
             <header
                 className="flex items-start justify-between border-b-2 pb-6"
                 style={{ borderColor: accentColor }}
@@ -155,6 +169,7 @@ export function PrintableDocument({
                     </div>
                 </div>
             </section>
+            </div>
 
             {reference && (
                 <p className="mt-4 border-b border-neutral-200 pb-3 text-xs text-neutral-600 italic">
@@ -260,7 +275,12 @@ export function PrintableDocument({
                 </section>
             )}
 
-            <footer className="print-footer mt-10 border-t border-neutral-200 bg-white pt-3">
+            <footer
+                className={cn(
+                    'print-footer border-t border-neutral-200 bg-white pt-3',
+                    documentType === 'RECIBO' ? 'mt-auto' : 'mt-10'
+                )}
+            >
                 {hasPaymentInfo && (
                     <section className="text-xs">
                         <p className="font-bold tracking-wide uppercase">Formas de pagamento:</p>

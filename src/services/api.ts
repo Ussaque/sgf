@@ -1,5 +1,5 @@
 import type {
-    User, Company, Client, Invoice, Quotation, Receipt, Product
+    User, Company, Client, Invoice, Quotation, Receipt, Product, Role
 } from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api';
@@ -54,6 +54,21 @@ export const api = {
     },
     async updateUser(user: User): Promise<User> {
         return patch(`/users/${user.id}`, { role: user.role });
+    },
+    async createUser(data: {
+        name: string;
+        email: string;
+        password: string;
+        role: Role;
+        allowed_company_ids: string[];
+    }): Promise<User> {
+        return post('/users', data);
+    },
+    async resetUserPassword(userId: string, password: string): Promise<void> {
+        return post(`/users/${userId}/reset-password`, { password });
+    },
+    async updateUserCompanies(userId: string, allowed_company_ids: string[]): Promise<User> {
+        return patch(`/users/${userId}`, { allowed_company_ids });
     },
 
     // Companies

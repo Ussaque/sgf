@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
@@ -68,6 +68,7 @@ export default function Clients() {
     const [open, setOpen] = useState(false);
     const [editingClient, setEditingClient] = useState<Client | null>(null);
     const [deletingClient, setDeletingClient] = useState<Client | null>(null);
+    const [search, setSearch] = useState('');
 
     const form = useForm<ClientFormValues>({ defaultValues: EMPTY_FORM });
 
@@ -75,6 +76,16 @@ export default function Clients() {
         if (!companyId) return;
         setClients(await api.getClients(companyId));
     }
+
+    const filteredClients = useMemo(() => {
+        const term = search.trim().toLowerCase();
+        if (!term) return clients;
+        return clients.filter((client) =>
+            `${client.name} ${client.nuit} ${client.email} ${client.phone ?? ''}`
+                .toLowerCase()
+                .includes(term)
+        );
+    }, [clients, search]);
 
     useEffect(() => {
         refresh();
@@ -248,9 +259,19 @@ export default function Clients() {
             <Card>
                 <CardHeader>
                     <CardTitle>Todos os clientes</CardTitle>
-                    <CardDescription>{clients.length} cliente(s) registados</CardDescription>
+                    <CardDescription>
+                        {search
+                            ? `${filteredClients.length} de ${clients.length} cliente(s) registados`
+                            : `${clients.length} cliente(s) registados`}
+                    </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="grid gap-4">
+                    <Input
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Pesquisar por nome, NUIT, email ou telefone..."
+                        className="max-w-sm"
+                    />
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -262,7 +283,7 @@ export default function Clients() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {clients.map((client) => (
+                            {filteredClients.map((client) => (
                                 <TableRow key={client.id}>
                                     <TableCell className="font-medium">{client.name}</TableCell>
                                     <TableCell>{client.nuit}</TableCell>
@@ -292,10 +313,12 @@ export default function Clients() {
                                     )}
                                 </TableRow>
                             ))}
-                            {clients.length === 0 && (
+                            {filteredClients.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={5} className="text-center text-muted-foreground">
-                                        Ainda não há clientes registados.
+                                        {clients.length === 0
+                                            ? 'Ainda não há clientes registados.'
+                                            : 'Nenhum cliente corresponde à pesquisa.'}
                                     </TableCell>
                                 </TableRow>
                             )}

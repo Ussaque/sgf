@@ -16,6 +16,8 @@ import Users from '@/pages/Users';
 import Profile from '@/pages/Profile';
 import Settings from '@/pages/Settings';
 import Companies from '@/pages/Companies';
+import Statements from '@/pages/Statements';
+import StatementPrint from '@/pages/StatementPrint';
 
 function App() {
     return (
@@ -47,6 +49,14 @@ function App() {
                         </ProtectedRoute>
                     }
                 />
+                <Route
+                    path="/extratos/:clientId/imprimir"
+                    element={
+                        <ProtectedRoute>
+                            <StatementPrint />
+                        </ProtectedRoute>
+                    }
+                />
 
                 <Route
                     element={
@@ -59,6 +69,7 @@ function App() {
                     <Route path="/cotacoes" element={<Quotations />} />
                     <Route path="/faturas" element={<Invoices />} />
                     <Route path="/recibos" element={<Receipts />} />
+                    <Route path="/extratos" element={<Statements />} />
                     <Route path="/clientes" element={<Clients />} />
                     <Route path="/produtos" element={<Products />} />
                     <Route path="/empresas" element={<Companies />} />

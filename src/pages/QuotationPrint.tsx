@@ -1,16 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '@/services/api';
 import type { Client, Company, Quotation } from '@/types';
 import { PrintableDocument } from '@/components/document/printable-document';
 import { PrintToolbar } from '@/components/document/print-toolbar';
-import { QUOTATION_STATUS_LABELS } from '@/lib/status-labels';
+import { generatePdf } from '@/lib/generate-pdf';
 
 export default function QuotationPrint() {
     const { id } = useParams<{ id: string }>();
     const [quotation, setQuotation] = useState<Quotation | null>(null);
     const [company, setCompany] = useState<Company | null>(null);
     const [client, setClient] = useState<Client | null>(null);
+    const documentRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (!id) return;
@@ -32,8 +33,15 @@ export default function QuotationPrint() {
 
     return (
         <>
-            <PrintToolbar />
+            <PrintToolbar
+                onDownload={async () => {
+                    if (documentRef.current) {
+                        await generatePdf(documentRef.current, `Cotacao-${quotation.number}.pdf`);
+                    }
+                }}
+            />
             <PrintableDocument
+                ref={documentRef}
                 documentType="COTAÇÃO"
                 company={company}
                 client={client}
@@ -45,9 +53,6 @@ export default function QuotationPrint() {
                 reference={quotation.reference}
                 createdBy={quotation.created_by}
                 stamp={quotation.status === 'REJECTED' ? 'REJEITADA' : undefined}
-                statusLabel={
-                    quotation.status !== 'REJECTED' ? QUOTATION_STATUS_LABELS[quotation.status] : undefined
-                }
             />
         </>
     );

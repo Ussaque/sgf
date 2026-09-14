@@ -27,6 +27,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { CompanyProfileForm } from '@/components/company-profile-form';
 import { BankAccountsEditor } from '@/components/bank-accounts-editor';
+import { COLOR_THEMES } from '@/lib/color-themes';
+import { Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 function previewNumber(prefix: string, sequence: number) {
     const year = new Date().getFullYear();
@@ -282,17 +285,76 @@ function BillingTab({ company }: { company: Company }) {
     );
 }
 
-function AppearanceTab() {
+function AppearanceTab({ company, canManageCompany }: { company?: Company; canManageCompany: boolean }) {
+    const { refreshCompanies } = useCompany();
+
+    async function selectColorTheme(themeId: string | null) {
+        if (!company) return;
+        await api.updateCompany({ ...company, color_theme: themeId });
+        toast.success('Tema da aplicação atualizado');
+        refreshCompanies();
+    }
+
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Aparência</CardTitle>
-                <CardDescription>Escolhe como a aplicação se apresenta no teu dispositivo</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <ThemeToggle />
-            </CardContent>
-        </Card>
+        <div className="grid gap-4">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Modo</CardTitle>
+                    <CardDescription>Escolhe como a aplicação se apresenta no teu dispositivo</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <ThemeToggle />
+                </CardContent>
+            </Card>
+
+            {canManageCompany && company && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Cor do tema</CardTitle>
+                        <CardDescription>
+                            Aplica-se a toda a aplicação para todos os utilizadores desta empresa
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex flex-wrap gap-3">
+                            <button
+                                type="button"
+                                onClick={() => selectColorTheme(null)}
+                                className={cn(
+                                    'flex flex-col items-center gap-1.5 rounded-lg border p-2 text-xs',
+                                    !company.color_theme && 'border-primary ring-2 ring-primary/30'
+                                )}
+                            >
+                                <span className="flex size-8 items-center justify-center rounded-full border bg-neutral-800 text-white">
+                                    {!company.color_theme && <Check className="size-4" />}
+                                </span>
+                                Padrão
+                            </button>
+                            {COLOR_THEMES.map((themeOption) => (
+                                <button
+                                    key={themeOption.id}
+                                    type="button"
+                                    onClick={() => selectColorTheme(themeOption.id)}
+                                    className={cn(
+                                        'flex flex-col items-center gap-1.5 rounded-lg border p-2 text-xs',
+                                        company.color_theme === themeOption.id &&
+                                            'border-primary ring-2 ring-primary/30'
+                                    )}
+                                >
+                                    <span
+                                        className="flex size-8 items-center justify-center rounded-full text-white"
+                                        style={{ backgroundColor: themeOption.swatch }}
+                                    >
+                                        {company.color_theme === themeOption.id && <Check className="size-4" />}
+                                    </span>
+                                    {themeOption.label}
+                                </button>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+        </div>
     );
 }
 
@@ -328,7 +390,7 @@ export default function Settings() {
                     </TabsContent>
                 )}
                 <TabsContent value="aparencia">
-                    <AppearanceTab />
+                    <AppearanceTab company={company} canManageCompany={canManageCompany} />
                 </TabsContent>
             </Tabs>
         </div>

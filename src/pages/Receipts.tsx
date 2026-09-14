@@ -1,12 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Ban, Plus, Printer } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { api } from '@/services/api';
-import type { Invoice, Receipt } from '@/types';
+import type { Client, Invoice, Receipt } from '@/types';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { DocumentFilters, ALL_FILTER_VALUE } from '@/components/document/document-filters';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -87,8 +88,14 @@ export default function Receipts() {
     const { companyId } = useCompany();
     const [receipts, setReceipts] = useState<Receipt[]>([]);
     const [invoices, setInvoices] = useState<Invoice[]>([]);
+    const [clients, setClients] = useState<Client[]>([]);
     const [createOpen, setCreateOpen] = useState(false);
     const [voidingReceipt, setVoidingReceipt] = useState<Receipt | null>(null);
+    const [search, setSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState(ALL_FILTER_VALUE);
+    const [clientFilter, setClientFilter] = useState(ALL_FILTER_VALUE);
+    const [dateFrom, setDateFrom] = useState<string | undefined>();
+    const [dateTo, setDateTo] = useState<string | undefined>();
 
     const form = useForm<ReceiptFormValues>({
         defaultValues: { invoice_id: '', method: 'BANK_TRANSFER', reference: '' },
@@ -96,12 +103,14 @@ export default function Receipts() {
 
     async function refresh() {
         if (!companyId) return;
-        const [recs, invs] = await Promise.all([
+        const [recs, invs, cls] = await Promise.all([
             api.getReceipts(companyId),
             api.getInvoices(companyId),
+            api.getClients(companyId),
         ]);
         setReceipts(recs.sort((a, b) => b.created_at.localeCompare(a.created_at)));
         setInvoices(invs);
+        setClients(cls);
     }
 
     useEffect(() => {
@@ -111,6 +120,46 @@ export default function Receipts() {
 
     function invoiceNumber(id: string) {
         return invoices.find((i) => i.id === id)?.number ?? '—';
+    }
+
+    function clientIdForInvoice(invoiceId: string) {
+        return invoices.find((i) => i.id === invoiceId)?.client_id;
+    }
+
+    const filteredReceipts = useMemo(() => {
+        const term = search.trim().toLowerCase();
+        return receipts.filter((receipt) => {
+            if (statusFilter !== ALL_FILTER_VALUE) {
+                const voidedStatus = receipt.voided ? 'VOIDED' : 'ISSUED';
+                if (voidedStatus !== statusFilter) return false;
+            }
+            if (clientFilter !== ALL_FILTER_VALUE && clientIdForInvoice(receipt.invoice_id) !== clientFilter) {
+                return false;
+            }
+            if (dateFrom && receipt.date.slice(0, 10) < dateFrom) return false;
+            if (dateTo && receipt.date.slice(0, 10) > dateTo) return false;
+            if (term) {
+                const haystack = `${receipt.number} ${invoiceNumber(receipt.invoice_id)} ${receipt.reference ?? ''}`.toLowerCase();
+                if (!haystack.includes(term)) return false;
+            }
+            return true;
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [receipts, invoices, search, statusFilter, clientFilter, dateFrom, dateTo]);
+
+    const filtersActive =
+        search !== '' ||
+        statusFilter !== ALL_FILTER_VALUE ||
+        clientFilter !== ALL_FILTER_VALUE ||
+        !!dateFrom ||
+        !!dateTo;
+
+    function clearFilters() {
+        setSearch('');
+        setStatusFilter(ALL_FILTER_VALUE);
+        setClientFilter(ALL_FILTER_VALUE);
+        setDateFrom(undefined);
+        setDateTo(undefined);
     }
 
     const payableInvoices = invoices.filter(
@@ -253,9 +302,33 @@ export default function Receipts() {
             <Card>
                 <CardHeader>
                     <CardTitle>Todos os recibos</CardTitle>
-                    <CardDescription>{receipts.length} recibo(s)</CardDescription>
+                    <CardDescription>
+                        {filtersActive
+                            ? `${filteredReceipts.length} de ${receipts.length} recibo(s)`
+                            : `${receipts.length} recibo(s)`}
+                    </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="grid gap-4">
+                    <DocumentFilters
+                        search={search}
+                        onSearchChange={setSearch}
+                        searchPlaceholder="Pesquisar por número, fatura ou referência..."
+                        status={statusFilter}
+                        onStatusChange={setStatusFilter}
+                        statusOptions={[
+                            { value: 'ISSUED', label: 'Emitido' },
+                            { value: 'VOIDED', label: 'Anulado' },
+                        ]}
+                        clientId={clientFilter}
+                        onClientChange={setClientFilter}
+                        clients={clients}
+                        dateFrom={dateFrom}
+                        onDateFromChange={setDateFrom}
+                        dateTo={dateTo}
+                        onDateToChange={setDateTo}
+                        onClear={clearFilters}
+                        active={filtersActive}
+                    />
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -269,7 +342,7 @@ export default function Receipts() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {receipts.map((receipt) => (
+                            {filteredReceipts.map((receipt) => (
                                 <TableRow key={receipt.id}>
                                     <TableCell className="font-medium">{receipt.number}</TableCell>
                                     <TableCell>{invoiceNumber(receipt.invoice_id)}</TableCell>
@@ -307,10 +380,12 @@ export default function Receipts() {
                                     </TableCell>
                                 </TableRow>
                             ))}
-                            {receipts.length === 0 && (
+                            {filteredReceipts.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={7} className="text-center text-muted-foreground">
-                                        Ainda não há recibos emitidos.
+                                        {receipts.length === 0
+                                            ? 'Ainda não há recibos emitidos.'
+                                            : 'Nenhum recibo corresponde aos filtros.'}
                                     </TableCell>
                                 </TableRow>
                             )}

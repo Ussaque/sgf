@@ -27,6 +27,7 @@ export interface Company {
     phone?: string;
     logo_url?: string;
     brand_color?: string; // Hex color used to theme printed documents
+    color_theme?: string | null; // App UI color theme id, see lib/color-themes.ts (absent/null = default)
     default_tax_rate?: number; // Default IVA % for new invoice/quotation lines
     default_due_days?: number; // Default days until due for invoices/quotations
     bank_accounts?: BankAccount[];

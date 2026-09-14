@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '@/services/api';
 import type { Client, Company, Invoice, Receipt } from '@/types';
 import { PrintableDocument } from '@/components/document/printable-document';
 import { PrintToolbar } from '@/components/document/print-toolbar';
+import { generatePdf } from '@/lib/generate-pdf';
 
 export default function ReceiptPrint() {
     const { id } = useParams<{ id: string }>();
@@ -11,6 +12,7 @@ export default function ReceiptPrint() {
     const [company, setCompany] = useState<Company | null>(null);
     const [client, setClient] = useState<Client | null>(null);
     const [invoice, setInvoice] = useState<Invoice | null>(null);
+    const documentRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (!id) return;
@@ -36,8 +38,15 @@ export default function ReceiptPrint() {
 
     return (
         <>
-            <PrintToolbar />
+            <PrintToolbar
+                onDownload={async () => {
+                    if (documentRef.current) {
+                        await generatePdf(documentRef.current, `Recibo-${receipt.number}.pdf`);
+                    }
+                }}
+            />
             <PrintableDocument
+                ref={documentRef}
                 documentType="RECIBO"
                 company={company}
                 client={client}

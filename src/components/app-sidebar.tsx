@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
     Building2,
     Check,
     ChevronsUpDown,
+    FileBarChart,
     FileSpreadsheet,
     FileText,
     LayoutDashboard,
@@ -41,6 +43,16 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 type NavItem = {
     title: string;
@@ -54,6 +66,7 @@ const NAV_ITEMS: NavItem[] = [
     { title: 'Cotações', url: '/cotacoes', icon: FileSpreadsheet },
     { title: 'Faturas', url: '/faturas', icon: FileText },
     { title: 'Recibos', url: '/recibos', icon: Receipt },
+    { title: 'Extratos', url: '/extratos', icon: FileBarChart },
     { title: 'Clientes', url: '/clientes', icon: Users },
     { title: 'Produtos & Serviços', url: '/produtos', icon: Package },
     { title: 'Empresas', url: '/empresas', icon: Building2, minRole: 'ADMIN' },
@@ -73,11 +86,13 @@ export function AppSidebar() {
     const { user, logout, hasPermission } = useAuth();
     const { company, companies, setCompanyId } = useCompany();
     const location = useLocation();
+    const [confirmLogoutOpen, setConfirmLogoutOpen] = useState(false);
 
     const items = NAV_ITEMS.filter((item) => !item.minRole || hasPermission(item.minRole));
     const canSwitchCompany = companies.length > 1;
 
     return (
+        <>
         <Sidebar collapsible="icon">
             <SidebarHeader>
                 <SidebarMenu>
@@ -210,7 +225,10 @@ export function AppSidebar() {
                                         Definições
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem variant="destructive" onClick={logout}>
+                                    <DropdownMenuItem
+                                        variant="destructive"
+                                        onClick={() => setConfirmLogoutOpen(true)}
+                                    >
                                         <LogOut />
                                         Terminar sessão
                                     </DropdownMenuItem>
@@ -221,5 +239,21 @@ export function AppSidebar() {
                 )}
             </SidebarFooter>
         </Sidebar>
+
+        <AlertDialog open={confirmLogoutOpen} onOpenChange={setConfirmLogoutOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Terminar sessão</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Tens a certeza que queres terminar a sessão?
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={logout}>Terminar sessão</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+        </>
     );
 }

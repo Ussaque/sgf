@@ -89,6 +89,7 @@ companiesRouter.patch('/:id', requireRole('ADMIN'), async (req, res) => {
         phone: 'phone',
         logo_url: 'logo_url',
         brand_color: 'brand_color',
+        color_theme: 'color_theme',
         default_tax_rate: 'default_tax_rate',
         default_due_days: 'default_due_days',
         mpesa_number: 'mpesa_number',

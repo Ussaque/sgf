@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Ban, Pencil, Plus, Printer, Receipt as ReceiptIcon } from 'lucide-react';
@@ -62,6 +62,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { LineItemsEditor, emptyItem } from '@/components/document/line-items-editor';
+import { DocumentFilters, ALL_FILTER_VALUE } from '@/components/document/document-filters';
 import { DatePicker } from '@/components/date-picker';
 
 const STATUS_VARIANT: Record<InvoiceStatus, 'default' | 'secondary' | 'destructive' | 'outline'> = {
@@ -109,6 +110,11 @@ export default function Invoices() {
     const [paymentInvoice, setPaymentInvoice] = useState<Invoice | null>(null);
     const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
     const [cancellingInvoice, setCancellingInvoice] = useState<Invoice | null>(null);
+    const [search, setSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState(ALL_FILTER_VALUE);
+    const [clientFilter, setClientFilter] = useState(ALL_FILTER_VALUE);
+    const [dateFrom, setDateFrom] = useState<string | undefined>();
+    const [dateTo, setDateTo] = useState<string | undefined>();
 
     const form = useForm<InvoiceFormValues>({
         defaultValues: {
@@ -141,6 +147,37 @@ export default function Invoices() {
 
     function clientName(id: string) {
         return clients.find((c) => c.id === id)?.name ?? '—';
+    }
+
+    const filteredInvoices = useMemo(() => {
+        const term = search.trim().toLowerCase();
+        return invoices.filter((invoice) => {
+            if (statusFilter !== ALL_FILTER_VALUE && invoice.status !== statusFilter) return false;
+            if (clientFilter !== ALL_FILTER_VALUE && invoice.client_id !== clientFilter) return false;
+            if (dateFrom && invoice.date.slice(0, 10) < dateFrom) return false;
+            if (dateTo && invoice.date.slice(0, 10) > dateTo) return false;
+            if (term) {
+                const haystack = `${invoice.number} ${clientName(invoice.client_id)}`.toLowerCase();
+                if (!haystack.includes(term)) return false;
+            }
+            return true;
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [invoices, clients, search, statusFilter, clientFilter, dateFrom, dateTo]);
+
+    const filtersActive =
+        search !== '' ||
+        statusFilter !== ALL_FILTER_VALUE ||
+        clientFilter !== ALL_FILTER_VALUE ||
+        !!dateFrom ||
+        !!dateTo;
+
+    function clearFilters() {
+        setSearch('');
+        setStatusFilter(ALL_FILTER_VALUE);
+        setClientFilter(ALL_FILTER_VALUE);
+        setDateFrom(undefined);
+        setDateTo(undefined);
     }
 
     function openCreateDialog() {
@@ -351,9 +388,30 @@ export default function Invoices() {
             <Card>
                 <CardHeader>
                     <CardTitle>Todas as faturas</CardTitle>
-                    <CardDescription>{invoices.length} fatura(s)</CardDescription>
+                    <CardDescription>
+                        {filtersActive
+                            ? `${filteredInvoices.length} de ${invoices.length} fatura(s)`
+                            : `${invoices.length} fatura(s)`}
+                    </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="grid gap-4">
+                    <DocumentFilters
+                        search={search}
+                        onSearchChange={setSearch}
+                        searchPlaceholder="Pesquisar por número ou cliente..."
+                        status={statusFilter}
+                        onStatusChange={setStatusFilter}
+                        statusOptions={Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label }))}
+                        clientId={clientFilter}
+                        onClientChange={setClientFilter}
+                        clients={clients}
+                        dateFrom={dateFrom}
+                        onDateFromChange={setDateFrom}
+                        dateTo={dateTo}
+                        onDateToChange={setDateTo}
+                        onClear={clearFilters}
+                        active={filtersActive}
+                    />
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -366,7 +424,7 @@ export default function Invoices() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {invoices.map((invoice) => (
+                            {filteredInvoices.map((invoice) => (
                                 <TableRow key={invoice.id}>
                                     <TableCell className="font-medium">{invoice.number}</TableCell>
                                     <TableCell>{clientName(invoice.client_id)}</TableCell>
@@ -423,10 +481,12 @@ export default function Invoices() {
                                     </TableCell>
                                 </TableRow>
                             ))}
-                            {invoices.length === 0 && (
+                            {filteredInvoices.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={6} className="text-center text-muted-foreground">
-                                        Ainda não há faturas emitidas.
+                                        {invoices.length === 0
+                                            ? 'Ainda não há faturas emitidas.'
+                                            : 'Nenhuma fatura corresponde aos filtros.'}
                                     </TableCell>
                                 </TableRow>
                             )}

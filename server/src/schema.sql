@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS companies (
   phone VARCHAR(50) NULL,
   logo_url VARCHAR(500) NULL,
   brand_color VARCHAR(20) NULL,
+  color_theme VARCHAR(50) NULL,
   default_tax_rate DOUBLE NULL,
   default_due_days INT NULL,
   mpesa_number VARCHAR(50) NULL,
@@ -168,3 +169,5 @@ CREATE TABLE IF NOT EXISTS receipts (
   INDEX (company_id),
   INDEX (invoice_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS color_theme VARCHAR(50) NULL;

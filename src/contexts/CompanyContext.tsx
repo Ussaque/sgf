@@ -44,6 +44,14 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
 
     const company = companies.find((c) => c.id === companyId);
 
+    useEffect(() => {
+        if (company?.color_theme) {
+            document.documentElement.setAttribute('data-color-theme', company.color_theme);
+        } else {
+            document.documentElement.removeAttribute('data-color-theme');
+        }
+    }, [company?.color_theme]);
+
     return (
         <CompanyContext.Provider value={{ companyId, company, companies, setCompanyId, refreshCompanies }}>
             {children}
