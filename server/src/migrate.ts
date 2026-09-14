@@ -11,7 +11,17 @@ async function main() {
         .filter(Boolean);
 
     for (const statement of statements) {
-        await pool.query(statement);
+        try {
+            await pool.query(statement);
+        } catch (err) {
+            // ER_DUP_FIELDNAME: column already added by a previous migrate run. ADD COLUMN has
+            // no portable "IF NOT EXISTS" across MySQL and MariaDB, so this keeps re-runs safe.
+            if ((err as { code?: string }).code === 'ER_DUP_FIELDNAME') {
+                console.log(`(coluna já existe, ignorado) ${statement.trim().slice(0, 60)}...`);
+                continue;
+            }
+            throw err;
+        }
     }
 
     console.log(`Schema aplicado (${statements.length} instruções).`);
