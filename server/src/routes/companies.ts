@@ -3,6 +3,13 @@ import { Router } from 'express';
 import { pool, withTransaction } from '../db';
 import { requireAuth, requireRole, canAccessCompany } from '../middleware/auth';
 import { mapCompany } from '../rows';
+import { generateDocumentNumber } from '../documentNumber';
+
+const SEQUENCE_CHECKS = [
+    { field: 'current_invoice_sequence', prefixField: 'invoice_prefix', table: 'invoices', label: 'fatura' },
+    { field: 'current_quotation_sequence', prefixField: 'quotation_prefix', table: 'quotations', label: 'cotação' },
+    { field: 'current_receipt_sequence', prefixField: 'receipt_prefix', table: 'receipts', label: 'recibo' },
+] as const;
 
 export const companiesRouter = Router();
 
@@ -80,6 +87,26 @@ companiesRouter.patch('/:id', requireRole('ADMIN'), async (req, res) => {
     }
     const b = req.body;
     const id = req.params.id;
+
+    const [existingRows] = await pool.query<any[]>('SELECT * FROM companies WHERE id = ?', [id]);
+    const existing = existingRows[0];
+    if (!existing) return res.status(404).json({ error: 'Empresa não encontrada' });
+
+    for (const check of SEQUENCE_CHECKS) {
+        if (b[check.field] !== undefined) {
+            const prefix = b[check.prefixField] ?? existing[check.prefixField];
+            const number = generateDocumentNumber(prefix, b[check.field]);
+            const [dupRows] = await pool.query<any[]>(
+                `SELECT id FROM ${check.table} WHERE company_id = ? AND number = ?`,
+                [id, number]
+            );
+            if (dupRows.length > 0) {
+                return res.status(400).json({
+                    error: `Já existe uma ${check.label} com o número ${number}. Escolhe um número diferente.`,
+                });
+            }
+        }
+    }
 
     const fieldMap: Record<string, string> = {
         name: 'name',
