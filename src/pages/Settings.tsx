@@ -23,6 +23,13 @@ import {
     FormLabel,
     FormMessage,
 } from '@/components/ui/form';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { CompanyProfileForm } from '@/components/company-profile-form';
@@ -30,6 +37,8 @@ import { BankAccountsEditor } from '@/components/bank-accounts-editor';
 import { COLOR_THEMES } from '@/lib/color-themes';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+const CURRENCIES = ['MZN', 'USD', 'ZAR', 'EUR'];
 
 function previewNumber(prefix: string, sequence: number) {
     const year = new Date().getFullYear();
@@ -39,6 +48,10 @@ function previewNumber(prefix: string, sequence: number) {
 type BillingFormValues = {
     default_tax_rate: number;
     default_due_days: number;
+    default_currency: string;
+    invoice_prefix: string;
+    quotation_prefix: string;
+    receipt_prefix: string;
     current_invoice_sequence: number;
     current_receipt_sequence: number;
     current_quotation_sequence: number;
@@ -71,6 +84,10 @@ function BillingTab({ company }: { company: Company }) {
         defaultValues: {
             default_tax_rate: company.default_tax_rate ?? 16,
             default_due_days: company.default_due_days ?? 30,
+            default_currency: company.default_currency,
+            invoice_prefix: company.invoice_prefix,
+            quotation_prefix: company.quotation_prefix,
+            receipt_prefix: company.receipt_prefix,
             current_invoice_sequence: company.current_invoice_sequence,
             current_receipt_sequence: company.current_receipt_sequence,
             current_quotation_sequence: company.current_quotation_sequence,
@@ -88,6 +105,10 @@ function BillingTab({ company }: { company: Company }) {
             ...company,
             default_tax_rate: formValues.default_tax_rate,
             default_due_days: formValues.default_due_days,
+            default_currency: formValues.default_currency,
+            invoice_prefix: formValues.invoice_prefix,
+            quotation_prefix: formValues.quotation_prefix,
+            receipt_prefix: formValues.receipt_prefix,
             current_invoice_sequence: formValues.current_invoice_sequence,
             current_receipt_sequence: formValues.current_receipt_sequence,
             current_quotation_sequence: formValues.current_quotation_sequence,
@@ -111,7 +132,7 @@ function BillingTab({ company }: { company: Company }) {
             <CardContent>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-6">
-                        <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="grid gap-4 sm:grid-cols-3">
                             <FormField
                                 control={form.control}
                                 name="default_tax_rate"
@@ -151,75 +172,165 @@ function BillingTab({ company }: { company: Company }) {
                                     </FormItem>
                                 )}
                             />
+                            <FormField
+                                control={form.control}
+                                name="default_currency"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Moeda</FormLabel>
+                                        <Select value={field.value} onValueChange={field.onChange}>
+                                            <FormControl>
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {CURRENCIES.map((currency) => (
+                                                    <SelectItem key={currency} value={currency}>
+                                                        {currency}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
+                        <Separator />
+
+                        <div className="grid gap-1">
+                            <h3 className="text-sm font-medium">Numeração de documentos</h3>
+                            <p className="text-xs text-muted-foreground">
+                                Prefixo e próximo número de cada tipo de documento
+                            </p>
                         </div>
 
                         <div className="grid gap-4 sm:grid-cols-3">
-                            <FormField
-                                control={form.control}
-                                name="current_invoice_sequence"
-                                rules={{ required: true, min: 1 }}
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Próxima fatura</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                type="number"
-                                                min={1}
-                                                {...field}
-                                                onChange={(e) => field.onChange(e.target.valueAsNumber)}
-                                            />
-                                        </FormControl>
-                                        <p className="text-xs text-muted-foreground">
-                                            {previewNumber('FAT', values.current_invoice_sequence || 1)}
-                                        </p>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="current_receipt_sequence"
-                                rules={{ required: true, min: 1 }}
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Próximo recibo</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                type="number"
-                                                min={1}
-                                                {...field}
-                                                onChange={(e) => field.onChange(e.target.valueAsNumber)}
-                                            />
-                                        </FormControl>
-                                        <p className="text-xs text-muted-foreground">
-                                            {previewNumber('REC', values.current_receipt_sequence || 1)}
-                                        </p>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="current_quotation_sequence"
-                                rules={{ required: true, min: 1 }}
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Próxima cotação</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                type="number"
-                                                min={1}
-                                                {...field}
-                                                onChange={(e) => field.onChange(e.target.valueAsNumber)}
-                                            />
-                                        </FormControl>
-                                        <p className="text-xs text-muted-foreground">
-                                            {previewNumber('COT', values.current_quotation_sequence || 1)}
-                                        </p>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                            <div className="grid gap-2">
+                                <FormField
+                                    control={form.control}
+                                    name="invoice_prefix"
+                                    rules={{ required: true }}
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Prefixo das faturas</FormLabel>
+                                            <FormControl>
+                                                <Input {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="current_invoice_sequence"
+                                    rules={{ required: true, min: 1 }}
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Próxima fatura</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="number"
+                                                    min={1}
+                                                    {...field}
+                                                    onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                                                />
+                                            </FormControl>
+                                            <p className="text-xs text-muted-foreground">
+                                                {previewNumber(
+                                                    values.invoice_prefix || 'FAT',
+                                                    values.current_invoice_sequence || 1
+                                                )}
+                                            </p>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                            <div className="grid gap-2">
+                                <FormField
+                                    control={form.control}
+                                    name="quotation_prefix"
+                                    rules={{ required: true }}
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Prefixo das cotações</FormLabel>
+                                            <FormControl>
+                                                <Input {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="current_quotation_sequence"
+                                    rules={{ required: true, min: 1 }}
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Próxima cotação</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="number"
+                                                    min={1}
+                                                    {...field}
+                                                    onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                                                />
+                                            </FormControl>
+                                            <p className="text-xs text-muted-foreground">
+                                                {previewNumber(
+                                                    values.quotation_prefix || 'COT',
+                                                    values.current_quotation_sequence || 1
+                                                )}
+                                            </p>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                            <div className="grid gap-2">
+                                <FormField
+                                    control={form.control}
+                                    name="receipt_prefix"
+                                    rules={{ required: true }}
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Prefixo dos recibos</FormLabel>
+                                            <FormControl>
+                                                <Input {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="current_receipt_sequence"
+                                    rules={{ required: true, min: 1 }}
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Próximo recibo</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="number"
+                                                    min={1}
+                                                    {...field}
+                                                    onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                                                />
+                                            </FormControl>
+                                            <p className="text-xs text-muted-foreground">
+                                                {previewNumber(
+                                                    values.receipt_prefix || 'REC',
+                                                    values.current_receipt_sequence || 1
+                                                )}
+                                            </p>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
                         </div>
 
                         <Separator />

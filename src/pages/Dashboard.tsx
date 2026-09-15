@@ -31,7 +31,7 @@ export default function Dashboard() {
     const { user } = useAuth();
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [metrics, setMetrics] = useState({ totalRevenue: 0, pendingAmount: 0, invoiceCount: 0 });
-    const { companyId } = useCompany();
+    const { companyId, company } = useCompany();
 
     useEffect(() => {
         if (!companyId) return;
@@ -64,7 +64,7 @@ export default function Dashboard() {
                     <CardHeader>
                         <CardDescription>Receita total</CardDescription>
                         <CardTitle className="text-2xl">
-                            {formatCurrency(metrics.totalRevenue)}
+                            {formatCurrency(metrics.totalRevenue, company?.default_currency)}
                         </CardTitle>
                     </CardHeader>
                 </Card>
@@ -72,7 +72,7 @@ export default function Dashboard() {
                     <CardHeader>
                         <CardDescription>Valor pendente</CardDescription>
                         <CardTitle className="text-2xl">
-                            {formatCurrency(metrics.pendingAmount)}
+                            {formatCurrency(metrics.pendingAmount, company?.default_currency)}
                         </CardTitle>
                     </CardHeader>
                 </Card>

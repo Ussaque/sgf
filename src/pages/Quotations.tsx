@@ -430,7 +430,9 @@ export default function Quotations() {
                                             {STATUS_LABELS[quotation.status]}
                                         </Badge>
                                     </TableCell>
-                                    <TableCell className="text-right">{formatCurrency(quotation.total)}</TableCell>
+                                    <TableCell className="text-right">
+                                        {formatCurrency(quotation.total, company?.default_currency)}
+                                    </TableCell>
                                     <TableCell>
                                         <div className="flex justify-end gap-1">
                                             {canEdit && !quotation.converted_invoice_id && (

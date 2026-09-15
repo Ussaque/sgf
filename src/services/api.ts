@@ -88,7 +88,14 @@ export const api = {
     async createCompany(
         data: Omit<
             Company,
-            'id' | 'current_invoice_sequence' | 'current_receipt_sequence' | 'current_quotation_sequence'
+            | 'id'
+            | 'current_invoice_sequence'
+            | 'current_receipt_sequence'
+            | 'current_quotation_sequence'
+            | 'default_currency'
+            | 'invoice_prefix'
+            | 'quotation_prefix'
+            | 'receipt_prefix'
         >
     ): Promise<Company> {
         return post('/companies', data);

@@ -17,6 +17,10 @@ CREATE TABLE IF NOT EXISTS companies (
   color_theme VARCHAR(50) NULL,
   default_tax_rate DOUBLE NULL,
   default_due_days INT NULL,
+  default_currency VARCHAR(10) NOT NULL DEFAULT 'MZN',
+  invoice_prefix VARCHAR(20) NOT NULL DEFAULT 'FAT',
+  quotation_prefix VARCHAR(20) NOT NULL DEFAULT 'COT',
+  receipt_prefix VARCHAR(20) NOT NULL DEFAULT 'REC',
   mpesa_number VARCHAR(50) NULL,
   emola_number VARCHAR(50) NULL,
   payment_notes TEXT NULL,
@@ -173,4 +177,8 @@ CREATE TABLE IF NOT EXISTS receipts (
 
 ALTER TABLE companies ADD COLUMN color_theme VARCHAR(50) NULL;
 ALTER TABLE clients ADD COLUMN credit_balance DOUBLE NOT NULL DEFAULT 0;
+ALTER TABLE companies ADD COLUMN default_currency VARCHAR(10) NOT NULL DEFAULT 'MZN';
+ALTER TABLE companies ADD COLUMN invoice_prefix VARCHAR(20) NOT NULL DEFAULT 'FAT';
+ALTER TABLE companies ADD COLUMN quotation_prefix VARCHAR(20) NOT NULL DEFAULT 'COT';
+ALTER TABLE companies ADD COLUMN receipt_prefix VARCHAR(20) NOT NULL DEFAULT 'REC';
 ALTER TABLE invoices MODIFY status ENUM('DRAFT', 'SENT', 'PARTIALLY_PAID', 'PAID', 'OVERDUE', 'CANCELLED') NOT NULL DEFAULT 'SENT';

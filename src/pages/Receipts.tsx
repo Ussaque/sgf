@@ -86,7 +86,7 @@ type ReceiptFormValues = {
 export default function Receipts() {
     const { hasPermission } = useAuth();
     const canEdit = hasPermission('USER');
-    const { companyId } = useCompany();
+    const { companyId, company } = useCompany();
     const [receipts, setReceipts] = useState<Receipt[]>([]);
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [clients, setClients] = useState<Client[]>([]);
@@ -212,7 +212,7 @@ export default function Receipts() {
         const due = amountDue(invoice);
         if (values.amount > due + 0.01) {
             toast.success(
-                `Recibo emitido. Excedente de ${formatCurrency(values.amount - due)} creditado ao cliente.`
+                `Recibo emitido. Excedente de ${formatCurrency(values.amount - due, company?.default_currency)} creditado ao cliente.`
             );
         } else {
             toast.success('Recibo emitido com sucesso');
@@ -276,7 +276,7 @@ export default function Receipts() {
                                                     {payableInvoices.map((invoice) => (
                                                         <SelectItem key={invoice.id} value={invoice.id}>
                                                             {invoice.number} — Em falta{' '}
-                                                            {formatCurrency(amountDue(invoice))}
+                                                            {formatCurrency(amountDue(invoice), company?.default_currency)}
                                                         </SelectItem>
                                                     ))}
                                                 </SelectContent>
@@ -307,7 +307,7 @@ export default function Receipts() {
                                                     </FormControl>
                                                     {watchedAmount > due + 0.01 && (
                                                         <p className="text-xs text-amber-600">
-                                                            Excedente de {formatCurrency(watchedAmount - due)} fica
+                                                            Excedente de {formatCurrency(watchedAmount - due, company?.default_currency)} fica
                                                             como saldo a favor do cliente.
                                                         </p>
                                                     )}
@@ -423,7 +423,7 @@ export default function Receipts() {
                                             {receipt.voided ? 'Anulado' : 'Emitido'}
                                         </Badge>
                                     </TableCell>
-                                    <TableCell className="text-right">{formatCurrency(receipt.amount)}</TableCell>
+                                    <TableCell className="text-right">{formatCurrency(receipt.amount, company?.default_currency)}</TableCell>
                                     <TableCell>
                                         <div className="flex justify-end gap-1">
                                             {canEdit && !receipt.voided && (

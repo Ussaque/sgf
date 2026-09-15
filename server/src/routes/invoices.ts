@@ -51,12 +51,12 @@ invoicesRouter.post('/', requireRole('USER'), async (req, res) => {
 
     const id = await withTransaction(async (conn) => {
         const [companyRows] = await conn.query<any[]>(
-            'SELECT current_invoice_sequence FROM companies WHERE id = ? FOR UPDATE',
+            'SELECT current_invoice_sequence, invoice_prefix FROM companies WHERE id = ? FOR UPDATE',
             [b.company_id]
         );
         const company = companyRows[0];
         if (!company) throw new Error('Empresa não encontrada');
-        const number = generateDocumentNumber('FAT', company.current_invoice_sequence);
+        const number = generateDocumentNumber(company.invoice_prefix, company.current_invoice_sequence);
         const invoiceId = crypto.randomUUID();
 
         await conn.query(

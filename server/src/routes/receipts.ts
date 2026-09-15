@@ -51,7 +51,7 @@ receiptsRouter.post('/', requireRole('USER'), async (req, res) => {
 
     const id = await withTransaction(async (conn) => {
         const [companyRows] = await conn.query<any[]>(
-            'SELECT current_receipt_sequence FROM companies WHERE id = ? FOR UPDATE',
+            'SELECT current_receipt_sequence, receipt_prefix FROM companies WHERE id = ? FOR UPDATE',
             [b.company_id]
         );
         const company = companyRows[0];
@@ -63,7 +63,7 @@ receiptsRouter.post('/', requireRole('USER'), async (req, res) => {
         const invoice = invoiceRows[0];
         if (!invoice) throw new Error('Fatura não encontrada');
 
-        const number = generateDocumentNumber('REC', company.current_receipt_sequence);
+        const number = generateDocumentNumber(company.receipt_prefix, company.current_receipt_sequence);
         const receiptId = crypto.randomUUID();
 
         await conn.query(

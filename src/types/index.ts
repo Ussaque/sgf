@@ -30,6 +30,10 @@ export interface Company {
     color_theme?: string | null; // App UI color theme id, see lib/color-themes.ts (absent/null = default)
     default_tax_rate?: number; // Default IVA % for new invoice/quotation lines
     default_due_days?: number; // Default days until due for invoices/quotations
+    default_currency: string; // e.g. MZN, USD, ZAR, EUR — used to format amounts across the app
+    invoice_prefix: string; // e.g. "FAT" -> FAT-2026-001
+    quotation_prefix: string; // e.g. "COT" -> COT-2026-001
+    receipt_prefix: string; // e.g. "REC" -> REC-2026-001
     bank_accounts?: BankAccount[];
     mpesa_number?: string;
     emola_number?: string;

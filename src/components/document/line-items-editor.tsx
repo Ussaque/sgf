@@ -44,7 +44,15 @@ function itemFromProduct(product: Product, fallbackTaxRate: number): InvoiceItem
     };
 }
 
-function ProductPicker({ products, onSelect }: { products: Product[]; onSelect: (product: Product) => void }) {
+function ProductPicker({
+    products,
+    onSelect,
+    currency,
+}: {
+    products: Product[];
+    onSelect: (product: Product) => void;
+    currency?: string;
+}) {
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState('');
 
@@ -96,7 +104,7 @@ function ProductPicker({ products, onSelect }: { products: Product[]; onSelect: 
                         >
                             <span className="font-medium">{product.name}</span>
                             <span className="text-xs text-muted-foreground">
-                                {product.unit} — {formatCurrency(product.unit_price)}
+                                {product.unit} — {formatCurrency(product.unit_price, currency)}
                             </span>
                         </button>
                     ))}
@@ -188,7 +196,7 @@ export function LineItemsEditor() {
                                         />
                                     </TableCell>
                                     <TableCell className="text-right tabular-nums">
-                                        {formatCurrency(lineTotal)}
+                                        {formatCurrency(lineTotal, company?.default_currency)}
                                     </TableCell>
                                     <TableCell>
                                         <Button
@@ -209,13 +217,13 @@ export function LineItemsEditor() {
                         <TableRow>
                             <TableCell colSpan={4}>Subtotal</TableCell>
                             <TableCell colSpan={2} className="text-right">
-                                {formatCurrency(totals.subtotal)}
+                                {formatCurrency(totals.subtotal, company?.default_currency)}
                             </TableCell>
                         </TableRow>
                         <TableRow>
                             <TableCell colSpan={4}>IVA</TableCell>
                             <TableCell colSpan={2} className="text-right">
-                                {formatCurrency(totals.tax_total)}
+                                {formatCurrency(totals.tax_total, company?.default_currency)}
                             </TableCell>
                         </TableRow>
                         <TableRow>
@@ -223,7 +231,7 @@ export function LineItemsEditor() {
                                 Total
                             </TableCell>
                             <TableCell colSpan={2} className="text-right font-medium">
-                                {formatCurrency(totals.total)}
+                                {formatCurrency(totals.total, company?.default_currency)}
                             </TableCell>
                         </TableRow>
                     </TableFooter>
@@ -242,6 +250,7 @@ export function LineItemsEditor() {
                     <ProductPicker
                         products={products}
                         onSelect={(product) => append(itemFromProduct(product, defaultTaxRate))}
+                        currency={company?.default_currency}
                     />
                 )}
             </div>

@@ -74,7 +74,7 @@ const EMPTY_FORM: ProductFormValues = {
 export default function Products() {
     const { hasPermission } = useAuth();
     const canEdit = hasPermission('USER');
-    const { companyId } = useCompany();
+    const { companyId, company } = useCompany();
     const [products, setProducts] = useState<Product[]>([]);
     const [open, setOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -331,7 +331,7 @@ export default function Products() {
                                         {product.tax_rate !== undefined ? `${product.tax_rate}%` : 'Padrão'}
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        {formatCurrency(product.unit_price)}
+                                        {formatCurrency(product.unit_price, company?.default_currency)}
                                     </TableCell>
                                     {canEdit && (
                                         <TableCell>

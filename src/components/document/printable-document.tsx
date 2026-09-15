@@ -209,12 +209,13 @@ export function PrintableDocument({
                                     <td className="px-2 py-2">{item.description}</td>
                                     <td className="px-2 py-2 text-center">{item.quantity}</td>
                                     <td className="px-2 py-2 text-right font-mono">
-                                        {formatCurrency(item.unit_price)}
+                                        {formatCurrency(item.unit_price, company.default_currency)}
                                     </td>
                                     <td className="px-2 py-2 text-center">{item.tax_rate}%</td>
                                     <td className="px-2 py-2 text-right font-mono">
                                         {formatCurrency(
-                                            item.quantity * item.unit_price * (1 + item.tax_rate / 100)
+                                            item.quantity * item.unit_price * (1 + item.tax_rate / 100),
+                                            company.default_currency
                                         )}
                                     </td>
                                 </tr>
@@ -225,11 +226,15 @@ export function PrintableDocument({
                     <div className="ml-auto mt-4 w-64 text-xs">
                         <div className="flex justify-between border-b border-neutral-200 py-1.5">
                             <span className="text-neutral-600">Subtotal</span>
-                            <span className="font-mono">{formatCurrency(totals.subtotal)}</span>
+                            <span className="font-mono">
+                                {formatCurrency(totals.subtotal, company.default_currency)}
+                            </span>
                         </div>
                         <div className="flex justify-between border-b border-neutral-200 py-1.5">
                             <span className="text-neutral-600">Total impostos</span>
-                            <span className="font-mono">{formatCurrency(totals.tax_total)}</span>
+                            <span className="font-mono">
+                                {formatCurrency(totals.tax_total, company.default_currency)}
+                            </span>
                         </div>
                         <div
                             className="mt-1 flex items-center justify-between rounded-md px-2 py-2 text-base font-bold"
@@ -239,7 +244,7 @@ export function PrintableDocument({
                             }}
                         >
                             <span>Total</span>
-                            <span className="font-mono">{formatCurrency(totals.total)}</span>
+                            <span className="font-mono">{formatCurrency(totals.total, company.default_currency)}</span>
                         </div>
                     </div>
                 </section>
@@ -263,7 +268,9 @@ export function PrintableDocument({
                     )}
                     <div className="flex justify-between py-2 text-sm font-semibold">
                         <span>Valor pago</span>
-                        <span className="font-mono">{formatCurrency(receiptInfo.amount)}</span>
+                        <span className="font-mono">
+                            {formatCurrency(receiptInfo.amount, company.default_currency)}
+                        </span>
                     </div>
                 </section>
             )}

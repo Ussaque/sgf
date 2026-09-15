@@ -315,7 +315,7 @@ export default function Invoices() {
         const due = amountDue(paymentInvoice);
         if (values.amount > due + 0.01) {
             toast.success(
-                `Pagamento registado. Excedente de ${formatCurrency(values.amount - due)} creditado ao cliente.`
+                `Pagamento registado. Excedente de ${formatCurrency(values.amount - due, company?.default_currency)} creditado ao cliente.`
             );
         } else {
             toast.success('Pagamento registado e recibo emitido');
@@ -483,7 +483,9 @@ export default function Invoices() {
                                             {STATUS_LABELS[invoice.status]}
                                         </Badge>
                                     </TableCell>
-                                    <TableCell className="text-right">{formatCurrency(invoice.total)}</TableCell>
+                                    <TableCell className="text-right">
+                                        {formatCurrency(invoice.total, company?.default_currency)}
+                                    </TableCell>
                                     <TableCell>
                                         <div className="flex justify-end gap-1">
                                             {canEdit && (invoice.status === 'DRAFT' || invoice.status === 'SENT') && (
@@ -552,12 +554,14 @@ export default function Invoices() {
                     {paymentInvoice && (
                         <div className="text-sm text-muted-foreground">
                             <p>
-                                {paymentInvoice.number} — Total {formatCurrency(paymentInvoice.total)}
+                                {paymentInvoice.number} — Total{' '}
+                                {formatCurrency(paymentInvoice.total, company?.default_currency)}
                             </p>
                             {amountPaid(paymentInvoice.id) > 0 && (
                                 <p>
-                                    Já recebido {formatCurrency(amountPaid(paymentInvoice.id))} · Em falta{' '}
-                                    {formatCurrency(amountDue(paymentInvoice))}
+                                    Já recebido{' '}
+                                    {formatCurrency(amountPaid(paymentInvoice.id), company?.default_currency)} · Em
+                                    falta {formatCurrency(amountDue(paymentInvoice), company?.default_currency)}
                                 </p>
                             )}
                         </div>
@@ -585,7 +589,8 @@ export default function Invoices() {
                                                 <p className="text-xs text-amber-600">
                                                     Excedente de{' '}
                                                     {formatCurrency(
-                                                        paymentForm.watch('amount') - amountDue(paymentInvoice)
+                                                        paymentForm.watch('amount') - amountDue(paymentInvoice),
+                                                        company?.default_currency
                                                     )}{' '}
                                                     fica como saldo a favor do cliente.
                                                 </p>

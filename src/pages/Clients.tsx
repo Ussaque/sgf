@@ -66,7 +66,7 @@ const EMPTY_FORM: ClientFormValues = { name: '', nuit: '', address: '', email: '
 export default function Clients() {
     const { hasPermission } = useAuth();
     const canEdit = hasPermission('USER');
-    const { companyId } = useCompany();
+    const { companyId, company } = useCompany();
     const navigate = useNavigate();
     const [clients, setClients] = useState<Client[]>([]);
     const [open, setOpen] = useState(false);
@@ -313,7 +313,7 @@ export default function Clients() {
                                     <TableCell className="text-right">
                                         {client.credit_balance > 0 ? (
                                             <span className="font-mono text-emerald-700">
-                                                {formatCurrency(client.credit_balance)}
+                                                {formatCurrency(client.credit_balance, company?.default_currency)}
                                             </span>
                                         ) : (
                                             <span className="text-muted-foreground">—</span>

@@ -124,23 +124,23 @@ export function ClientStatementDocument({
             <section className="mt-6 grid grid-cols-3 gap-3">
                 <div className="rounded-md border border-neutral-200 p-3">
                     <p className="text-xs text-neutral-500">Débito (faturado)</p>
-                    <p className="mt-1 font-mono text-base font-bold">{formatCurrency(totalDebit)}</p>
+                    <p className="mt-1 font-mono text-base font-bold">{formatCurrency(totalDebit, company.default_currency)}</p>
                 </div>
                 <div className="rounded-md border border-neutral-200 p-3">
                     <p className="text-xs text-neutral-500">Crédito (recebido)</p>
                     <p className="mt-1 font-mono text-base font-bold text-emerald-700">
-                        {formatCurrency(totalCredit)}
+                        {formatCurrency(totalCredit, company.default_currency)}
                     </p>
                 </div>
                 <div className="rounded-md border border-neutral-200 p-3">
                     <p className="text-xs text-neutral-500">Saldo</p>
-                    <p className="mt-1 font-mono text-base font-bold text-amber-700">{formatCurrency(saldo)}</p>
+                    <p className="mt-1 font-mono text-base font-bold text-amber-700">{formatCurrency(saldo, company.default_currency)}</p>
                 </div>
             </section>
 
             {client.credit_balance > 0 && (
                 <p className="mt-3 text-xs text-emerald-700">
-                    O cliente tem {formatCurrency(client.credit_balance)} de saldo a favor, resultante de
+                    O cliente tem {formatCurrency(client.credit_balance, company.default_currency)} de saldo a favor, resultante de
                     pagamentos acima do valor faturado, disponível para abater em faturas futuras.
                 </p>
             )}
@@ -164,12 +164,12 @@ export function ClientStatementDocument({
                                     {entry.description} {entry.document}
                                 </td>
                                 <td className="px-2 py-2 text-right font-mono">
-                                    {entry.debit > 0 ? formatCurrency(entry.debit) : '—'}
+                                    {entry.debit > 0 ? formatCurrency(entry.debit, company.default_currency) : '—'}
                                 </td>
                                 <td className="px-2 py-2 text-right font-mono">
-                                    {entry.credit > 0 ? formatCurrency(entry.credit) : '—'}
+                                    {entry.credit > 0 ? formatCurrency(entry.credit, company.default_currency) : '—'}
                                 </td>
-                                <td className="px-2 py-2 text-right font-mono">{formatCurrency(entry.balance)}</td>
+                                <td className="px-2 py-2 text-right font-mono">{formatCurrency(entry.balance, company.default_currency)}</td>
                             </tr>
                         ))}
                         {ledger.length === 0 && (
