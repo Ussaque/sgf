@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Ban, Pencil, Plus, Printer, Receipt as ReceiptIcon } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -104,6 +105,8 @@ export default function Invoices() {
     const { user, hasPermission } = useAuth();
     const canEdit = hasPermission('USER');
     const { companyId, company } = useCompany();
+    const location = useLocation();
+    const navigate = useNavigate();
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [clients, setClients] = useState<Client[]>([]);
     const [createOpen, setCreateOpen] = useState(false);
@@ -191,6 +194,21 @@ export default function Invoices() {
         });
         setCreateOpen(true);
     }
+
+    useEffect(() => {
+        const state = location.state as { prefillClientId?: string; filterClientId?: string } | null;
+        if (state?.prefillClientId) {
+            openCreateDialog();
+            form.setValue('client_id', state.prefillClientId);
+        }
+        if (state?.filterClientId) {
+            setClientFilter(state.filterClientId);
+        }
+        if (state?.prefillClientId || state?.filterClientId) {
+            navigate(location.pathname, { replace: true });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     function openEditDialog(invoice: Invoice) {
         setEditingInvoice(invoice);

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ArrowRightLeft, Pencil, Plus, Printer, Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -92,6 +92,7 @@ export default function Quotations() {
     const { user, hasPermission } = useAuth();
     const canEdit = hasPermission('USER');
     const { companyId, company } = useCompany();
+    const location = useLocation();
     const navigate = useNavigate();
     const [quotations, setQuotations] = useState<Quotation[]>([]);
     const [clients, setClients] = useState<Client[]>([]);
@@ -177,6 +178,16 @@ export default function Quotations() {
         });
         setCreateOpen(true);
     }
+
+    useEffect(() => {
+        const state = location.state as { prefillClientId?: string } | null;
+        if (state?.prefillClientId) {
+            openCreateDialog();
+            form.setValue('client_id', state.prefillClientId);
+            navigate(location.pathname, { replace: true });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     function openEditDialog(quotation: Quotation) {
         setEditingQuotation(quotation);

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { FileBarChart, FilePlus, FileSpreadsheet, History, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { api } from '@/services/api';
@@ -65,6 +66,7 @@ export default function Clients() {
     const { hasPermission } = useAuth();
     const canEdit = hasPermission('USER');
     const { companyId } = useCompany();
+    const navigate = useNavigate();
     const [clients, setClients] = useState<Client[]>([]);
     const [open, setOpen] = useState(false);
     const [editingClient, setEditingClient] = useState<Client | null>(null);
@@ -154,6 +156,22 @@ export default function Clients() {
         } finally {
             setDeletingClient(null);
         }
+    }
+
+    function viewStatement(client: Client) {
+        window.open(`/extratos/${client.id}/imprimir`, '_blank');
+    }
+
+    function newInvoiceFor(client: Client) {
+        navigate('/faturas', { state: { prefillClientId: client.id } });
+    }
+
+    function newQuotationFor(client: Client) {
+        navigate('/cotacoes', { state: { prefillClientId: client.id } });
+    }
+
+    function viewHistoryFor(client: Client) {
+        navigate('/faturas', { state: { filterClientId: client.id } });
     }
 
     return (
@@ -280,7 +298,7 @@ export default function Clients() {
                                 <TableHead>NUIT</TableHead>
                                 <TableHead>Email</TableHead>
                                 <TableHead>Morada</TableHead>
-                                {canEdit && <TableHead className="w-20" />}
+                                <TableHead className="w-40" />
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -290,28 +308,62 @@ export default function Clients() {
                                     <TableCell>{client.nuit}</TableCell>
                                     <TableCell>{client.email}</TableCell>
                                     <TableCell>{client.address}</TableCell>
-                                    {canEdit && (
-                                        <TableCell>
-                                            <div className="flex justify-end gap-1">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon-sm"
-                                                    title="Editar"
-                                                    onClick={() => openEditDialog(client)}
-                                                >
-                                                    <Pencil />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon-sm"
-                                                    title="Eliminar"
-                                                    onClick={() => setDeletingClient(client)}
-                                                >
-                                                    <Trash2 />
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    )}
+                                    <TableCell>
+                                        <div className="flex justify-end gap-1">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon-sm"
+                                                title="Ver extrato"
+                                                onClick={() => viewStatement(client)}
+                                            >
+                                                <FileBarChart />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon-sm"
+                                                title="Ver histórico de faturas"
+                                                onClick={() => viewHistoryFor(client)}
+                                            >
+                                                <History />
+                                            </Button>
+                                            {canEdit && (
+                                                <>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon-sm"
+                                                        title="Nova fatura"
+                                                        onClick={() => newInvoiceFor(client)}
+                                                    >
+                                                        <FilePlus />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon-sm"
+                                                        title="Nova cotação"
+                                                        onClick={() => newQuotationFor(client)}
+                                                    >
+                                                        <FileSpreadsheet />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon-sm"
+                                                        title="Editar"
+                                                        onClick={() => openEditDialog(client)}
+                                                    >
+                                                        <Pencil />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon-sm"
+                                                        title="Eliminar"
+                                                        onClick={() => setDeletingClient(client)}
+                                                    >
+                                                        <Trash2 />
+                                                    </Button>
+                                                </>
+                                            )}
+                                        </div>
+                                    </TableCell>
                                 </TableRow>
                             ))}
                             {filteredClients.length === 0 && (
