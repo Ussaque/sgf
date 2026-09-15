@@ -62,6 +62,7 @@ export function mapClient(c: any) {
         address: c.address,
         email: c.email,
         phone: opt(c.phone),
+        credit_balance: c.credit_balance,
     };
 }
 

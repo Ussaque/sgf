@@ -138,6 +138,13 @@ export function ClientStatementDocument({
                 </div>
             </section>
 
+            {client.credit_balance > 0 && (
+                <p className="mt-3 text-xs text-emerald-700">
+                    O cliente tem {formatCurrency(client.credit_balance)} de saldo a favor, resultante de
+                    pagamentos acima do valor faturado, disponível para abater em faturas futuras.
+                </p>
+            )}
+
             <section className="mt-6">
                 <table className="w-full border-collapse border border-neutral-900 text-xs">
                     <thead>

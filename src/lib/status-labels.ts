@@ -3,6 +3,7 @@ import type { InvoiceStatus, QuotationStatus } from '@/types';
 export const INVOICE_STATUS_LABELS: Record<InvoiceStatus, string> = {
     DRAFT: 'Rascunho',
     SENT: 'Enviada',
+    PARTIALLY_PAID: 'Parcialmente paga',
     PAID: 'Paga',
     OVERDUE: 'Atrasada',
     CANCELLED: 'Cancelada',

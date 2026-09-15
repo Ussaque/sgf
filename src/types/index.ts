@@ -66,9 +66,10 @@ export interface Client {
     address: string;
     email: string;
     phone?: string;
+    credit_balance: number; // Overpayment saldo in favor of this client, usable on future invoices
 }
 
-export type InvoiceStatus = 'DRAFT' | 'SENT' | 'PAID' | 'OVERDUE' | 'CANCELLED';
+export type InvoiceStatus = 'DRAFT' | 'SENT' | 'PARTIALLY_PAID' | 'PAID' | 'OVERDUE' | 'CANCELLED';
 
 export interface InvoiceItem {
     id: string;

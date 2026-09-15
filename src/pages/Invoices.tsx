@@ -69,6 +69,7 @@ import { DatePicker } from '@/components/date-picker';
 const STATUS_VARIANT: Record<InvoiceStatus, 'default' | 'secondary' | 'destructive' | 'outline'> = {
     DRAFT: 'secondary',
     SENT: 'outline',
+    PARTIALLY_PAID: 'outline',
     PAID: 'default',
     OVERDUE: 'destructive',
     CANCELLED: 'secondary',
@@ -91,6 +92,7 @@ type InvoiceFormValues = {
 };
 
 type PaymentFormValues = {
+    amount: number;
     method: string;
     reference: string;
 };
@@ -109,6 +111,7 @@ export default function Invoices() {
     const navigate = useNavigate();
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [clients, setClients] = useState<Client[]>([]);
+    const [receipts, setReceipts] = useState<Receipt[]>([]);
     const [createOpen, setCreateOpen] = useState(false);
     const [paymentInvoice, setPaymentInvoice] = useState<Invoice | null>(null);
     const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
@@ -130,17 +133,34 @@ export default function Invoices() {
     });
 
     const paymentForm = useForm<PaymentFormValues>({
-        defaultValues: { method: 'BANK_TRANSFER', reference: '' },
+        defaultValues: { amount: 0, method: 'BANK_TRANSFER', reference: '' },
     });
 
     async function refresh() {
         if (!companyId) return;
-        const [invs, cls] = await Promise.all([
+        const [invs, cls, recs] = await Promise.all([
             api.getInvoices(companyId),
             api.getClients(companyId),
+            api.getReceipts(companyId),
         ]);
         setInvoices(invs.sort((a, b) => b.created_at.localeCompare(a.created_at)));
         setClients(cls);
+        setReceipts(recs);
+    }
+
+    function amountPaid(invoiceId: string) {
+        return receipts
+            .filter((r) => r.invoice_id === invoiceId && !r.voided)
+            .reduce((sum, r) => sum + r.amount, 0);
+    }
+
+    function amountDue(invoice: Invoice) {
+        return Math.max(0, invoice.total - amountPaid(invoice.id));
+    }
+
+    function openPaymentDialog(invoice: Invoice) {
+        paymentForm.reset({ amount: amountDue(invoice), method: 'BANK_TRANSFER', reference: '' });
+        setPaymentInvoice(invoice);
     }
 
     useEffect(() => {
@@ -279,17 +299,28 @@ export default function Invoices() {
 
     async function onSubmitPayment(values: PaymentFormValues) {
         if (!companyId || !paymentInvoice) return;
+        if (!values.amount || values.amount <= 0) {
+            toast.error('Indica um valor válido');
+            return;
+        }
         await api.createReceipt({
             company_id: companyId,
             invoice_id: paymentInvoice.id,
             date: new Date().toISOString(),
-            amount: paymentInvoice.total,
+            amount: values.amount,
             method: values.method as Receipt['method'],
             reference: values.reference || undefined,
         });
 
-        toast.success('Pagamento registado e recibo emitido');
-        paymentForm.reset({ method: 'BANK_TRANSFER', reference: '' });
+        const due = amountDue(paymentInvoice);
+        if (values.amount > due + 0.01) {
+            toast.success(
+                `Pagamento registado. Excedente de ${formatCurrency(values.amount - due)} creditado ao cliente.`
+            );
+        } else {
+            toast.success('Pagamento registado e recibo emitido');
+        }
+        paymentForm.reset({ amount: 0, method: 'BANK_TRANSFER', reference: '' });
         setPaymentInvoice(null);
         refresh();
     }
@@ -470,7 +501,7 @@ export default function Invoices() {
                                                     variant="ghost"
                                                     size="icon-sm"
                                                     title="Registar pagamento"
-                                                    onClick={() => setPaymentInvoice(invoice)}
+                                                    onClick={() => openPaymentDialog(invoice)}
                                                 >
                                                     <ReceiptIcon />
                                                 </Button>
@@ -519,12 +550,57 @@ export default function Invoices() {
                         <DialogTitle>Registar pagamento</DialogTitle>
                     </DialogHeader>
                     {paymentInvoice && (
-                        <p className="text-sm text-muted-foreground">
-                            {paymentInvoice.number} — {formatCurrency(paymentInvoice.total)}
-                        </p>
+                        <div className="text-sm text-muted-foreground">
+                            <p>
+                                {paymentInvoice.number} — Total {formatCurrency(paymentInvoice.total)}
+                            </p>
+                            {amountPaid(paymentInvoice.id) > 0 && (
+                                <p>
+                                    Já recebido {formatCurrency(amountPaid(paymentInvoice.id))} · Em falta{' '}
+                                    {formatCurrency(amountDue(paymentInvoice))}
+                                </p>
+                            )}
+                        </div>
                     )}
                     <Form {...paymentForm}>
                         <form onSubmit={paymentForm.handleSubmit(onSubmitPayment)} className="grid gap-4">
+                            <FormField
+                                control={paymentForm.control}
+                                name="amount"
+                                rules={{ required: true, min: 0.01 }}
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Valor recebido</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="number"
+                                                min={0}
+                                                step="0.01"
+                                                {...field}
+                                                onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                                            />
+                                        </FormControl>
+                                        {paymentInvoice &&
+                                            paymentForm.watch('amount') > amountDue(paymentInvoice) + 0.01 && (
+                                                <p className="text-xs text-amber-600">
+                                                    Excedente de{' '}
+                                                    {formatCurrency(
+                                                        paymentForm.watch('amount') - amountDue(paymentInvoice)
+                                                    )}{' '}
+                                                    fica como saldo a favor do cliente.
+                                                </p>
+                                            )}
+                                        {paymentInvoice &&
+                                            paymentForm.watch('amount') > 0 &&
+                                            paymentForm.watch('amount') < amountDue(paymentInvoice) - 0.01 && (
+                                                <p className="text-xs text-muted-foreground">
+                                                    Pagamento parcial — a fatura fica "Parcialmente paga".
+                                                </p>
+                                            )}
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
                             <FormField
                                 control={paymentForm.control}
                                 name="method"

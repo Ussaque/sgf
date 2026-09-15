@@ -78,6 +78,7 @@ const PAYMENT_METHODS: { value: string; label: string }[] = [
 
 type ReceiptFormValues = {
     invoice_id: string;
+    amount: number;
     method: string;
     reference: string;
 };
@@ -98,8 +99,10 @@ export default function Receipts() {
     const [dateTo, setDateTo] = useState<string | undefined>();
 
     const form = useForm<ReceiptFormValues>({
-        defaultValues: { invoice_id: '', method: 'BANK_TRANSFER', reference: '' },
+        defaultValues: { invoice_id: '', amount: 0, method: 'BANK_TRANSFER', reference: '' },
     });
+    const selectedInvoiceId = form.watch('invoice_id');
+    const watchedAmount = form.watch('amount');
 
     async function refresh() {
         if (!companyId) return;
@@ -124,6 +127,16 @@ export default function Receipts() {
 
     function clientIdForInvoice(invoiceId: string) {
         return invoices.find((i) => i.id === invoiceId)?.client_id;
+    }
+
+    function amountPaid(invoiceId: string) {
+        return receipts
+            .filter((r) => r.invoice_id === invoiceId && !r.voided)
+            .reduce((sum, r) => sum + r.amount, 0);
+    }
+
+    function amountDue(invoice: Invoice) {
+        return Math.max(0, invoice.total - amountPaid(invoice.id));
     }
 
     const filteredReceipts = useMemo(() => {
@@ -163,13 +176,25 @@ export default function Receipts() {
     }
 
     const payableInvoices = invoices.filter(
-        (invoice) => invoice.status === 'SENT' || invoice.status === 'OVERDUE'
+        (invoice) =>
+            invoice.status === 'SENT' || invoice.status === 'OVERDUE' || invoice.status === 'PARTIALLY_PAID'
     );
+
+    function selectInvoice(invoiceId: string | null) {
+        if (!invoiceId) return;
+        form.setValue('invoice_id', invoiceId);
+        const invoice = invoices.find((i) => i.id === invoiceId);
+        if (invoice) form.setValue('amount', amountDue(invoice));
+    }
 
     async function onSubmit(values: ReceiptFormValues) {
         if (!companyId) return;
         if (!values.invoice_id) {
             toast.error('Seleciona uma fatura');
+            return;
+        }
+        if (!values.amount || values.amount <= 0) {
+            toast.error('Indica um valor válido');
             return;
         }
         const invoice = invoices.find((i) => i.id === values.invoice_id);
@@ -179,13 +204,20 @@ export default function Receipts() {
             company_id: companyId,
             invoice_id: invoice.id,
             date: new Date().toISOString(),
-            amount: invoice.total,
+            amount: values.amount,
             method: values.method as Receipt['method'],
             reference: values.reference || undefined,
         });
 
-        toast.success('Recibo emitido com sucesso');
-        form.reset({ invoice_id: '', method: 'BANK_TRANSFER', reference: '' });
+        const due = amountDue(invoice);
+        if (values.amount > due + 0.01) {
+            toast.success(
+                `Recibo emitido. Excedente de ${formatCurrency(values.amount - due)} creditado ao cliente.`
+            );
+        } else {
+            toast.success('Recibo emitido com sucesso');
+        }
+        form.reset({ invoice_id: '', amount: 0, method: 'BANK_TRANSFER', reference: '' });
         setCreateOpen(false);
         refresh();
     }
@@ -194,7 +226,7 @@ export default function Receipts() {
         if (!voidingReceipt) return;
         try {
             await api.voidReceipt(voidingReceipt.id);
-            toast.success('Recibo anulado — a fatura voltou a estado não paga');
+            toast.success('Recibo anulado — o estado da fatura foi recalculado');
             refresh();
         } catch (error) {
             toast.error(error instanceof Error ? error.message : 'Erro ao anular recibo');
@@ -234,7 +266,7 @@ export default function Receipts() {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Fatura</FormLabel>
-                                            <Select value={field.value} onValueChange={field.onChange}>
+                                            <Select value={field.value} onValueChange={selectInvoice}>
                                                 <FormControl>
                                                     <SelectTrigger className="w-full">
                                                         <SelectValue placeholder="Seleciona uma fatura em aberto" />
@@ -243,7 +275,8 @@ export default function Receipts() {
                                                 <SelectContent>
                                                     {payableInvoices.map((invoice) => (
                                                         <SelectItem key={invoice.id} value={invoice.id}>
-                                                            {invoice.number} — {formatCurrency(invoice.total)}
+                                                            {invoice.number} — Em falta{' '}
+                                                            {formatCurrency(amountDue(invoice))}
                                                         </SelectItem>
                                                     ))}
                                                 </SelectContent>
@@ -252,6 +285,43 @@ export default function Receipts() {
                                         </FormItem>
                                     )}
                                 />
+                                {selectedInvoiceId && (
+                                    <FormField
+                                        control={form.control}
+                                        name="amount"
+                                        rules={{ required: true, min: 0.01 }}
+                                        render={({ field }) => {
+                                            const invoice = invoices.find((i) => i.id === selectedInvoiceId);
+                                            const due = invoice ? amountDue(invoice) : 0;
+                                            return (
+                                                <FormItem>
+                                                    <FormLabel>Valor recebido</FormLabel>
+                                                    <FormControl>
+                                                        <Input
+                                                            type="number"
+                                                            min={0}
+                                                            step="0.01"
+                                                            {...field}
+                                                            onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                                                        />
+                                                    </FormControl>
+                                                    {watchedAmount > due + 0.01 && (
+                                                        <p className="text-xs text-amber-600">
+                                                            Excedente de {formatCurrency(watchedAmount - due)} fica
+                                                            como saldo a favor do cliente.
+                                                        </p>
+                                                    )}
+                                                    {watchedAmount > 0 && watchedAmount < due - 0.01 && (
+                                                        <p className="text-xs text-muted-foreground">
+                                                            Pagamento parcial — a fatura fica "Parcialmente paga".
+                                                        </p>
+                                                    )}
+                                                    <FormMessage />
+                                                </FormItem>
+                                            );
+                                        }}
+                                    />
+                                )}
                                 <FormField
                                     control={form.control}
                                     name="method"
@@ -399,8 +469,8 @@ export default function Receipts() {
                     <AlertDialogHeader>
                         <AlertDialogTitle>Anular recibo</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Tens a certeza que queres anular o recibo {voidingReceipt?.number}? A fatura associada
-                            volta a estado não paga.
+                            Tens a certeza que queres anular o recibo {voidingReceipt?.number}? O estado da fatura
+                            associada é recalculado com base nos recibos restantes.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

@@ -5,6 +5,7 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { api } from '@/services/api';
 import type { Invoice, InvoiceStatus } from '@/types';
 import { formatCurrency } from '@/lib/utils';
+import { INVOICE_STATUS_LABELS as STATUS_LABELS } from '@/lib/status-labels';
 import {
     Card,
     CardContent,
@@ -18,14 +19,6 @@ import {
     ChartTooltipContent,
     type ChartConfig,
 } from '@/components/ui/chart';
-
-const STATUS_LABELS: Record<InvoiceStatus, string> = {
-    DRAFT: 'Rascunho',
-    SENT: 'Enviada',
-    PAID: 'Paga',
-    OVERDUE: 'Atrasada',
-    CANCELLED: 'Cancelada',
-};
 
 const chartConfig = {
     count: {

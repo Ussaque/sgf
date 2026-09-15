@@ -105,7 +105,7 @@ export const api = {
             return undefined;
         }
     },
-    async createClient(client: Client): Promise<Client> {
+    async createClient(client: Omit<Client, 'credit_balance'>): Promise<Client> {
         return post('/clients', client);
     },
     async updateClient(client: Client): Promise<Client> {

@@ -8,6 +8,7 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { api } from '@/services/api';
 import type { Client } from '@/types';
 import { generateId } from '@/lib/uuid';
+import { formatCurrency } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -298,6 +299,7 @@ export default function Clients() {
                                 <TableHead>NUIT</TableHead>
                                 <TableHead>Email</TableHead>
                                 <TableHead>Morada</TableHead>
+                                <TableHead className="text-right">Saldo</TableHead>
                                 <TableHead className="w-40" />
                             </TableRow>
                         </TableHeader>
@@ -308,6 +310,15 @@ export default function Clients() {
                                     <TableCell>{client.nuit}</TableCell>
                                     <TableCell>{client.email}</TableCell>
                                     <TableCell>{client.address}</TableCell>
+                                    <TableCell className="text-right">
+                                        {client.credit_balance > 0 ? (
+                                            <span className="font-mono text-emerald-700">
+                                                {formatCurrency(client.credit_balance)}
+                                            </span>
+                                        ) : (
+                                            <span className="text-muted-foreground">—</span>
+                                        )}
+                                    </TableCell>
                                     <TableCell>
                                         <div className="flex justify-end gap-1">
                                             <Button
@@ -368,7 +379,7 @@ export default function Clients() {
                             ))}
                             {filteredClients.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center text-muted-foreground">
+                                    <TableCell colSpan={6} className="text-center text-muted-foreground">
                                         {clients.length === 0
                                             ? 'Ainda não há clientes registados.'
                                             : 'Nenhum cliente corresponde à pesquisa.'}
