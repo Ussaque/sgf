@@ -66,6 +66,11 @@ receiptsRouter.post('/', requireRole('USER'), async (req, res) => {
         const number = generateDocumentNumber(company.receipt_prefix, company.current_receipt_sequence);
         const receiptId = crypto.randomUUID();
 
+        // Sum of receipts BEFORE this one is inserted — inserting first and summing after would
+        // double-count this receipt's own amount (it would already be in the SUM, then added again).
+        const totalPaid = (await sumActiveReceipts(conn, b.invoice_id)) + b.amount;
+        const overpaid = totalPaid - invoice.total;
+
         await conn.query(
             `INSERT INTO receipts (id, company_id, invoice_id, number, date, amount, method, reference)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -76,9 +81,6 @@ receiptsRouter.post('/', requireRole('USER'), async (req, res) => {
             'UPDATE companies SET current_receipt_sequence = current_receipt_sequence + 1 WHERE id = ?',
             [b.company_id]
         );
-
-        const totalPaid = (await sumActiveReceipts(conn, b.invoice_id)) + b.amount;
-        const overpaid = totalPaid - invoice.total;
 
         if (overpaid > PAID_EPSILON) {
             await conn.query('UPDATE invoices SET status = ? WHERE id = ?', ['PAID', b.invoice_id]);
