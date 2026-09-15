@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { api } from '@/services/api';
-import type { Client, Company, Invoice, Quotation, Receipt } from '@/types';
+import type { Client, Company, Invoice, Receipt } from '@/types';
 import { ClientStatementDocument } from '@/components/document/client-statement-document';
 import { PrintToolbar } from '@/components/document/print-toolbar';
 import { generatePdf } from '@/lib/generate-pdf';
@@ -15,7 +15,6 @@ export default function StatementPrint() {
     const [client, setClient] = useState<Client | null>(null);
     const [company, setCompany] = useState<Company | null>(null);
     const [invoices, setInvoices] = useState<Invoice[]>([]);
-    const [quotations, setQuotations] = useState<Quotation[]>([]);
     const [receipts, setReceipts] = useState<Receipt[]>([]);
     const documentRef = useRef<HTMLDivElement>(null);
 
@@ -24,15 +23,13 @@ export default function StatementPrint() {
         api.getClient(clientId).then(async (cli) => {
             if (!cli) return;
             setClient(cli);
-            const [comp, invs, quos, recs] = await Promise.all([
+            const [comp, invs, recs] = await Promise.all([
                 api.getCompany(cli.company_id),
                 api.getInvoices(cli.company_id),
-                api.getQuotations(cli.company_id),
                 api.getReceipts(cli.company_id),
             ]);
             setCompany(comp ?? null);
             setInvoices(invs.filter((i) => i.client_id === clientId));
-            setQuotations(quos.filter((q) => q.client_id === clientId));
             setReceipts(recs);
         });
     }, [clientId]);
@@ -50,11 +47,6 @@ export default function StatementPrint() {
         () => invoices.filter((i) => inRange(i.date)).sort((a, b) => a.date.localeCompare(b.date)),
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [invoices, dateFrom, dateTo]
-    );
-    const filteredQuotations = useMemo(
-        () => quotations.filter((q) => inRange(q.date)).sort((a, b) => a.date.localeCompare(b.date)),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [quotations, dateFrom, dateTo]
     );
     const filteredReceipts = useMemo(
         () =>
@@ -85,7 +77,6 @@ export default function StatementPrint() {
                 dateFrom={dateFrom}
                 dateTo={dateTo}
                 invoices={filteredInvoices}
-                quotations={filteredQuotations}
                 receipts={filteredReceipts}
             />
         </>
