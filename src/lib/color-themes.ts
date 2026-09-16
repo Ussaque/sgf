@@ -12,4 +12,7 @@ export const COLOR_THEMES: ColorTheme[] = [
     { id: 'amber-minimal', label: 'Âmbar', swatch: 'oklch(0.7686 0.1647 70.0804)' },
     { id: 'modern-minimal', label: 'Azul-cobalto', swatch: 'oklch(0.6231 0.1880 259.8145)' },
     { id: 'graphite', label: 'Grafite', swatch: 'oklch(0.4891 0 0)' },
+    { id: 'vermelho', label: 'Vermelho', swatch: 'oklch(0.5594 0.1900 25.8625)' },
+    { id: 'verde-escuro', label: 'Verde escuro', swatch: 'oklch(0.4200 0.1000 150)' },
+    { id: 'azul-escuro', label: 'Azul escuro', swatch: 'oklch(0.3800 0.1300 255)' },
 ];
