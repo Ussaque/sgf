@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +21,7 @@ export default function Login() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [justLoggedIn, setJustLoggedIn] = useState(false);
 
     const from = (location.state as { from?: Location })?.from?.pathname ?? '/';
 
@@ -29,12 +31,23 @@ export default function Login() {
         setIsSubmitting(true);
         try {
             await login(email, password);
-            navigate(from, { replace: true });
+            setJustLoggedIn(true);
+            setTimeout(() => navigate(from, { replace: true }), 900);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Erro ao iniciar sessão');
-        } finally {
             setIsSubmitting(false);
         }
+    }
+
+    if (justLoggedIn) {
+        return (
+            <div className="flex min-h-svh items-center justify-center bg-muted/30 p-4">
+                <div className="flex animate-in flex-col items-center gap-3 fade-in zoom-in-95 duration-500">
+                    <Loader2 className="size-8 animate-spin text-primary" />
+                    <p className="text-sm text-muted-foreground">A preparar o teu painel...</p>
+                </div>
+            </div>
+        );
     }
 
     return (
@@ -74,6 +87,7 @@ export default function Login() {
                             <p className="text-sm text-destructive">{error}</p>
                         )}
                         <Button type="submit" className="w-full" disabled={isSubmitting}>
+                            {isSubmitting && <Loader2 className="animate-spin" />}
                             {isSubmitting ? 'A entrar...' : 'Entrar'}
                         </Button>
                     </form>
