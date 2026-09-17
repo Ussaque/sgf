@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useFieldArray, useFormContext, useWatch } from 'react-hook-form';
-import { Plus, Search, Trash2 } from 'lucide-react';
+import { Percent, Plus, Search, Trash2 } from 'lucide-react';
 import { useCompany } from '@/contexts/CompanyContext';
 import { api } from '@/services/api';
 import type { InvoiceItem, Product } from '@/types';
@@ -10,7 +10,6 @@ import { generateId } from '@/lib/uuid';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
     Table,
     TableBody,
@@ -145,20 +144,19 @@ export function LineItemsEditor() {
 
     return (
         <div className="grid gap-2">
-            <div className="flex items-center gap-2 text-sm">
-                <span className="text-muted-foreground">IVA</span>
-                <Select
-                    value={taxEnabled ? 'on' : 'off'}
-                    onValueChange={(value) => applyTaxToggle(value === 'on')}
+            <div className="flex items-center gap-2">
+                <Button
+                    type="button"
+                    variant={taxEnabled ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => applyTaxToggle(!taxEnabled)}
                 >
-                    <SelectTrigger className="h-8 w-44">
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="on">Com IVA ({defaultTaxRate}%)</SelectItem>
-                        <SelectItem value="off">Sem IVA</SelectItem>
-                    </SelectContent>
-                </Select>
+                    <Percent />
+                    {taxEnabled ? `Com IVA (${defaultTaxRate}%)` : 'Sem IVA'}
+                </Button>
+                <span className="text-xs text-muted-foreground">
+                    Aplica-se a todos os itens da lista abaixo
+                </span>
             </div>
             <div className="overflow-x-auto rounded-md border">
                 <Table>
