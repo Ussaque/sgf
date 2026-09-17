@@ -10,6 +10,7 @@ import { generateId } from '@/lib/uuid';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
     Table,
     TableBody,
@@ -33,13 +34,13 @@ function emptyItem(taxRate = 16): InvoiceItem {
     };
 }
 
-function itemFromProduct(product: Product, fallbackTaxRate: number): InvoiceItem {
+function itemFromProduct(product: Product, taxRate: number): InvoiceItem {
     return {
         id: generateId(),
         description: `${product.name} (${product.unit})`,
         quantity: 1,
         unit_price: product.unit_price,
-        tax_rate: product.tax_rate ?? fallbackTaxRate,
+        tax_rate: taxRate,
         total: 0,
     };
 }
@@ -120,7 +121,7 @@ function ProductPicker({
 }
 
 export function LineItemsEditor() {
-    const { control, register } = useFormContext<ItemsFormValues>();
+    const { control, register, setValue } = useFormContext<ItemsFormValues>();
     const { fields, append, remove } = useFieldArray({ control, name: 'items' });
     const items = useWatch({ control, name: 'items' }) ?? [];
     const totals = computeTotals(items);
@@ -128,14 +129,37 @@ export function LineItemsEditor() {
     const { companyId, company } = useCompany();
     const defaultTaxRate = company?.default_tax_rate ?? 16;
     const [products, setProducts] = useState<Product[]>([]);
+    const [taxEnabled, setTaxEnabled] = useState(() => items.some((item) => item.tax_rate > 0));
 
     useEffect(() => {
         if (!companyId) return;
         api.getProducts(companyId).then(setProducts);
     }, [companyId]);
 
+    function applyTaxToggle(enabled: boolean) {
+        setTaxEnabled(enabled);
+        fields.forEach((_, index) => {
+            setValue(`items.${index}.tax_rate`, enabled ? defaultTaxRate : 0);
+        });
+    }
+
     return (
         <div className="grid gap-2">
+            <div className="flex items-center gap-2 text-sm">
+                <span className="text-muted-foreground">IVA</span>
+                <Select
+                    value={taxEnabled ? 'on' : 'off'}
+                    onValueChange={(value) => applyTaxToggle(value === 'on')}
+                >
+                    <SelectTrigger className="h-8 w-44">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="on">Com IVA ({defaultTaxRate}%)</SelectItem>
+                        <SelectItem value="off">Sem IVA</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
             <div className="overflow-x-auto rounded-md border">
                 <Table>
                     <TableHeader>
@@ -143,7 +167,6 @@ export function LineItemsEditor() {
                             <TableHead>Descrição</TableHead>
                             <TableHead className="w-20">Qtd.</TableHead>
                             <TableHead className="w-28">Preço unit.</TableHead>
-                            <TableHead className="w-20">IVA %</TableHead>
                             <TableHead className="w-28 text-right">Total</TableHead>
                             <TableHead className="w-10" />
                         </TableRow>
@@ -184,17 +207,6 @@ export function LineItemsEditor() {
                                             })}
                                         />
                                     </TableCell>
-                                    <TableCell>
-                                        <Input
-                                            type="number"
-                                            min={0}
-                                            step="1"
-                                            {...register(`items.${index}.tax_rate`, {
-                                                valueAsNumber: true,
-                                                min: 0,
-                                            })}
-                                        />
-                                    </TableCell>
                                     <TableCell className="text-right tabular-nums">
                                         {formatCurrency(lineTotal, company?.default_currency)}
                                     </TableCell>
@@ -215,19 +227,19 @@ export function LineItemsEditor() {
                     </TableBody>
                     <TableFooter>
                         <TableRow>
-                            <TableCell colSpan={4}>Subtotal</TableCell>
+                            <TableCell colSpan={3}>Subtotal</TableCell>
                             <TableCell colSpan={2} className="text-right">
                                 {formatCurrency(totals.subtotal, company?.default_currency)}
                             </TableCell>
                         </TableRow>
                         <TableRow>
-                            <TableCell colSpan={4}>IVA</TableCell>
+                            <TableCell colSpan={3}>IVA</TableCell>
                             <TableCell colSpan={2} className="text-right">
                                 {formatCurrency(totals.tax_total, company?.default_currency)}
                             </TableCell>
                         </TableRow>
                         <TableRow>
-                            <TableCell colSpan={4} className="font-medium">
+                            <TableCell colSpan={3} className="font-medium">
                                 Total
                             </TableCell>
                             <TableCell colSpan={2} className="text-right font-medium">
@@ -242,14 +254,21 @@ export function LineItemsEditor() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => append(emptyItem(defaultTaxRate))}
+                    onClick={() => append(emptyItem(taxEnabled ? defaultTaxRate : 0))}
                 >
                     <Plus /> Adicionar linha
                 </Button>
                 {products.length > 0 && (
                     <ProductPicker
                         products={products}
-                        onSelect={(product) => append(itemFromProduct(product, defaultTaxRate))}
+                        onSelect={(product) =>
+                            append(
+                                itemFromProduct(
+                                    product,
+                                    taxEnabled ? (product.tax_rate ?? defaultTaxRate) : 0
+                                )
+                            )
+                        }
                         currency={company?.default_currency}
                     />
                 )}
