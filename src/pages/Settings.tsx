@@ -136,19 +136,24 @@ function BillingTab({ company }: { company: Company }) {
                             <FormField
                                 control={form.control}
                                 name="default_tax_rate"
-                                rules={{ required: true, min: 0, max: 100 }}
+                                rules={{ required: true }}
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>IVA padrão (%)</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                type="number"
-                                                min={0}
-                                                max={100}
-                                                {...field}
-                                                onChange={(e) => field.onChange(e.target.valueAsNumber)}
-                                            />
-                                        </FormControl>
+                                        <FormLabel>Taxa de IVA</FormLabel>
+                                        <Select
+                                            value={String(field.value)}
+                                            onValueChange={(value) => field.onChange(Number(value))}
+                                        >
+                                            <FormControl>
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="16">16% (padrão)</SelectItem>
+                                                <SelectItem value="0">0% (isento)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                         <FormMessage />
                                     </FormItem>
                                 )}
