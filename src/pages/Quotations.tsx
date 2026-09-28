@@ -302,7 +302,14 @@ export default function Quotations() {
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>Cliente</FormLabel>
-                                                <Select value={field.value} onValueChange={field.onChange}>
+                                                <Select
+                                                    items={clients.map((client) => ({
+                                                        value: client.id,
+                                                        label: client.name,
+                                                    }))}
+                                                    value={field.value}
+                                                    onValueChange={field.onChange}
+                                                >
                                                     <FormControl>
                                                         <SelectTrigger className="w-full">
                                                             <SelectValue placeholder="Seleciona um cliente" />

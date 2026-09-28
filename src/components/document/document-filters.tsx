@@ -62,7 +62,11 @@ export function DocumentFilters({
 
             <div className="grid w-44 gap-1.5">
                 <Label className="text-xs text-muted-foreground">Estado</Label>
-                <Select value={status} onValueChange={(value) => onStatusChange(value ?? ALL)}>
+                <Select
+                    items={[{ value: ALL, label: 'Todos os estados' }, ...statusOptions]}
+                    value={status}
+                    onValueChange={(value) => onStatusChange(value ?? ALL)}
+                >
                     <SelectTrigger className="w-full">
                         <SelectValue />
                     </SelectTrigger>
@@ -80,7 +84,14 @@ export function DocumentFilters({
             {clients && onClientChange && (
                 <div className="grid w-48 gap-1.5">
                     <Label className="text-xs text-muted-foreground">Cliente</Label>
-                    <Select value={clientId} onValueChange={(value) => onClientChange(value ?? ALL)}>
+                    <Select
+                        items={[
+                            { value: ALL, label: 'Todos os clientes' },
+                            ...clients.map((client) => ({ value: client.id, label: client.name })),
+                        ]}
+                        value={clientId}
+                        onValueChange={(value) => onClientChange(value ?? ALL)}
+                    >
                         <SelectTrigger className="w-full">
                             <SelectValue />
                         </SelectTrigger>

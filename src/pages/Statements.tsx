@@ -62,7 +62,11 @@ export default function Statements() {
                     <div className="flex flex-wrap items-end gap-3">
                         <div className="grid min-w-56 gap-1.5">
                             <Label className="text-xs text-muted-foreground">Cliente</Label>
-                            <Select value={clientId} onValueChange={(value) => setClientId(value ?? '')}>
+                            <Select
+                                items={clients.map((client) => ({ value: client.id, label: client.name }))}
+                                value={clientId}
+                                onValueChange={(value) => setClientId(value ?? '')}
+                            >
                                 <SelectTrigger className="w-full">
                                     <SelectValue placeholder="Seleciona um cliente" />
                                 </SelectTrigger>

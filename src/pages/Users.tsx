@@ -260,7 +260,14 @@ export default function Users() {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Role</FormLabel>
-                                            <Select value={field.value} onValueChange={field.onChange}>
+                                            <Select
+                                                items={assignableRoles.map((role) => ({
+                                                    value: role,
+                                                    label: ROLE_LABELS[role],
+                                                }))}
+                                                value={field.value}
+                                                onValueChange={field.onChange}
+                                            >
                                                 <FormControl>
                                                     <SelectTrigger className="w-full">
                                                         <SelectValue />
@@ -376,6 +383,15 @@ export default function Users() {
                                         </TableCell>
                                         <TableCell>
                                             <Select
+                                                items={[
+                                                    ...rowAssignableRoles.map((role) => ({
+                                                        value: role,
+                                                        label: ROLE_LABELS[role],
+                                                    })),
+                                                    ...(!rowAssignableRoles.includes(target.role)
+                                                        ? [{ value: target.role, label: ROLE_LABELS[target.role] }]
+                                                        : []),
+                                                ]}
                                                 value={target.role}
                                                 onValueChange={(value) => handleRoleChange(target, value as Role)}
                                                 disabled={disabled}

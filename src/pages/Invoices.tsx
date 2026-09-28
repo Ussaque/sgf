@@ -355,7 +355,14 @@ export default function Invoices() {
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>Cliente</FormLabel>
-                                                <Select value={field.value} onValueChange={field.onChange}>
+                                                <Select
+                                                    items={clients.map((client) => ({
+                                                        value: client.id,
+                                                        label: client.name,
+                                                    }))}
+                                                    value={field.value}
+                                                    onValueChange={field.onChange}
+                                                >
                                                     <FormControl>
                                                         <SelectTrigger className="w-full">
                                                             <SelectValue placeholder="Seleciona um cliente" />
@@ -612,7 +619,11 @@ export default function Invoices() {
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Método de pagamento</FormLabel>
-                                        <Select value={field.value} onValueChange={field.onChange}>
+                                        <Select
+                                            items={PAYMENT_METHODS}
+                                            value={field.value}
+                                            onValueChange={field.onChange}
+                                        >
                                             <FormControl>
                                                 <SelectTrigger className="w-full">
                                                     <SelectValue />

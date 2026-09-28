@@ -266,7 +266,14 @@ export default function Receipts() {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Fatura</FormLabel>
-                                            <Select value={field.value} onValueChange={selectInvoice}>
+                                            <Select
+                                                items={payableInvoices.map((invoice) => ({
+                                                    value: invoice.id,
+                                                    label: `${invoice.number} — Em falta ${formatCurrency(amountDue(invoice), company?.default_currency)}`,
+                                                }))}
+                                                value={field.value}
+                                                onValueChange={selectInvoice}
+                                            >
                                                 <FormControl>
                                                     <SelectTrigger className="w-full">
                                                         <SelectValue placeholder="Seleciona uma fatura em aberto" />
@@ -328,7 +335,11 @@ export default function Receipts() {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Método de pagamento</FormLabel>
-                                            <Select value={field.value} onValueChange={field.onChange}>
+                                            <Select
+                                                items={PAYMENT_METHODS}
+                                                value={field.value}
+                                                onValueChange={field.onChange}
+                                            >
                                                 <FormControl>
                                                     <SelectTrigger className="w-full">
                                                         <SelectValue />
