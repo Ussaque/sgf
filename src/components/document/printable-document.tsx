@@ -1,7 +1,7 @@
 import type { Ref } from 'react';
 import type { Client, Company, InvoiceItem } from '@/types';
 import { computeTotals } from '@/lib/document-totals';
-import { cn, darkenForText, formatCurrency, formatDate } from '@/lib/utils';
+import { darkenForText, formatCurrency, formatDate } from '@/lib/utils';
 import { printStyles } from './print-styles';
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
@@ -77,10 +77,7 @@ export function PrintableDocument({
     return (
         <div
             ref={ref}
-            className={cn(
-                'print-document relative mx-auto max-w-3xl bg-white p-10 text-sm text-neutral-900',
-                documentType === 'RECIBO' && 'flex min-h-[273mm] flex-col'
-            )}
+            className="print-document relative mx-auto flex min-h-[273mm] max-w-3xl flex-col bg-white p-10 text-sm text-neutral-900"
         >
             <style>{printStyles}</style>
             {stamp && (
@@ -282,12 +279,7 @@ export function PrintableDocument({
                 </section>
             )}
 
-            <footer
-                className={cn(
-                    'print-footer border-t border-neutral-200 bg-white pt-3',
-                    documentType === 'RECIBO' ? 'mt-auto' : 'mt-10'
-                )}
-            >
+            <footer className="print-footer mt-auto border-t border-neutral-200 bg-white pt-3">
                 {hasPaymentInfo && (
                     <section className="text-xs">
                         <p className="font-bold tracking-wide uppercase">Formas de pagamento:</p>
