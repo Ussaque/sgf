@@ -254,7 +254,7 @@ export function LineItemsEditor() {
                     size="sm"
                     onClick={() => append(emptyItem(taxEnabled ? defaultTaxRate : 0))}
                 >
-                    <Plus /> Adicionar linha
+                    <Plus /> Adicionar item
                 </Button>
                 {products.length > 0 && (
                     <ProductPicker
