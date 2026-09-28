@@ -160,9 +160,9 @@ export function PrintableDocument({
                     <div className="mt-1 grid gap-0.5 text-xs text-neutral-600">
                         <p className="font-medium text-neutral-900">{client.name}</p>
                         <p>Endereço: {client.address}</p>
-                        <p>NUIT: {client.nuit}</p>
+                        {client.nuit && <p>NUIT: {client.nuit}</p>}
                         {client.phone && <p>Contacto: {client.phone}</p>}
-                        <p>Email: {client.email}</p>
+                        {client.email && <p>Email: {client.email}</p>}
                     </div>
                 </div>
             </section>

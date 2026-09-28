@@ -214,10 +214,9 @@ export default function Clients() {
                                 <FormField
                                     control={form.control}
                                     name="nuit"
-                                    rules={{ required: 'Obrigatório' }}
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>NUIT</FormLabel>
+                                            <FormLabel>NUIT (opcional)</FormLabel>
                                             <FormControl>
                                                 <Input {...field} />
                                             </FormControl>
@@ -242,10 +241,9 @@ export default function Clients() {
                                 <FormField
                                     control={form.control}
                                     name="email"
-                                    rules={{ required: 'Obrigatório' }}
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Email</FormLabel>
+                                            <FormLabel>Email (opcional)</FormLabel>
                                             <FormControl>
                                                 <Input type="email" {...field} />
                                             </FormControl>
@@ -307,8 +305,8 @@ export default function Clients() {
                             {filteredClients.map((client) => (
                                 <TableRow key={client.id}>
                                     <TableCell className="font-medium">{client.name}</TableCell>
-                                    <TableCell>{client.nuit}</TableCell>
-                                    <TableCell>{client.email}</TableCell>
+                                    <TableCell>{client.nuit || '—'}</TableCell>
+                                    <TableCell>{client.email || '—'}</TableCell>
                                     <TableCell>{client.address}</TableCell>
                                     <TableCell className="text-right">
                                         {client.credit_balance > 0 ? (
