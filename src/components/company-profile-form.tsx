@@ -84,9 +84,9 @@ export function CompanyProfileForm({ company, organizationId, onSaved }: Company
             nuit: values.nuit,
             address: values.address,
             email: values.email,
-            phone: values.phone || undefined,
+            phone: values.phone,
             logo_url: values.logo_url || undefined,
-            brand_color: values.brand_color || undefined,
+            brand_color: values.brand_color,
         };
 
         if (company) {

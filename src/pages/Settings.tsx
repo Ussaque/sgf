@@ -113,9 +113,9 @@ function BillingTab({ company }: { company: Company }) {
             current_receipt_sequence: formValues.current_receipt_sequence,
             current_quotation_sequence: formValues.current_quotation_sequence,
             bank_accounts: formValues.bank_accounts.filter((a) => a.bank_name || a.account_number),
-            mpesa_number: formValues.mpesa_number || undefined,
-            emola_number: formValues.emola_number || undefined,
-            payment_notes: formValues.payment_notes || undefined,
+            mpesa_number: formValues.mpesa_number,
+            emola_number: formValues.emola_number,
+            payment_notes: formValues.payment_notes,
         });
         toast.success('Definições de faturação atualizadas');
         refreshCompanies();
