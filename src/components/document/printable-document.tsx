@@ -1,5 +1,5 @@
 import type { Ref } from 'react';
-import type { Client, Company, InvoiceItem } from '@/types';
+import type { Client, Company, DeliveryNoteItem, InvoiceItem } from '@/types';
 import { computeTotals } from '@/lib/document-totals';
 import { darkenForText, formatCurrency, formatDate } from '@/lib/utils';
 import { printStyles } from './print-styles';
@@ -26,7 +26,8 @@ interface PrintableDocumentProps {
     number: string;
     date: string;
     secondaryDate?: { label: string; value: string };
-    items?: InvoiceItem[];
+    /** Priced line items for FATURA/COTAÇÃO, or plain description+quantity rows for GUIA DE ENTREGA. */
+    items?: InvoiceItem[] | DeliveryNoteItem[];
     notes?: string;
     /** Free-form contract/reference line, shown highlighted before the table. */
     reference?: string;
@@ -34,8 +35,8 @@ interface PrintableDocumentProps {
     createdBy?: string;
     /** Name of the person who signed for the goods — GUIA DE ENTREGA only. */
     receivedBy?: string;
-    /** Number of the invoice this document accompanies — GUIA DE ENTREGA only. */
-    relatedInvoiceNumber?: string;
+    /** Number of the receipt this document accompanies — GUIA DE ENTREGA only. */
+    relatedReceiptNumber?: string;
     receiptInfo?: ReceiptInfo;
     /** Large diagonal watermark for a voided/cancelled document, e.g. "ANULADO" or "CANCELADA". */
     stamp?: string;
@@ -62,14 +63,17 @@ export function PrintableDocument({
     reference,
     createdBy,
     receivedBy,
-    relatedInvoiceNumber,
+    relatedReceiptNumber,
     receiptInfo,
     stamp,
     statusLabel,
 }: PrintableDocumentProps) {
     const accentColor = company.brand_color || 'var(--primary)';
     const accentTextColor = company.brand_color ? darkenForText(company.brand_color) : accentColor;
-    const totals = items ? computeTotals(items) : null;
+    const isDeliveryNote = documentType === 'GUIA DE ENTREGA';
+    const pricedItems = !isDeliveryNote ? (items as InvoiceItem[] | undefined) : undefined;
+    const plainItems = isDeliveryNote ? (items as DeliveryNoteItem[] | undefined) : undefined;
+    const totals = pricedItems ? computeTotals(pricedItems) : null;
     const hasPaymentInfo =
         documentType !== 'RECIBO' &&
         documentType !== 'GUIA DE ENTREGA' &&
@@ -141,10 +145,10 @@ export function PrintableDocument({
                                 <span>{createdBy}</span>
                             </div>
                         )}
-                        {relatedInvoiceNumber && (
+                        {relatedReceiptNumber && (
                             <div className="flex gap-3">
-                                <span className="w-36 shrink-0 text-neutral-500">Referente à fatura</span>
-                                <span>{relatedInvoiceNumber}</span>
+                                <span className="w-36 shrink-0 text-neutral-500">Referente ao recibo</span>
+                                <span>{relatedReceiptNumber}</span>
                             </div>
                         )}
                     </div>
@@ -187,7 +191,7 @@ export function PrintableDocument({
                 </p>
             )}
 
-            {items && totals && (
+            {pricedItems && totals && (
                 <section className="mt-6">
                     <table className="w-full border-collapse border border-neutral-900 text-xs">
                         <thead>
@@ -213,7 +217,7 @@ export function PrintableDocument({
                             </tr>
                         </thead>
                         <tbody>
-                            {items.map((item, index) => (
+                            {pricedItems.map((item, index) => (
                                 <tr key={item.id} className="border-b border-neutral-200">
                                     <td className="px-2 py-2 text-center">{index + 1}</td>
                                     <td className="px-2 py-2">{item.description}</td>
@@ -257,6 +261,35 @@ export function PrintableDocument({
                             <span className="font-mono">{formatCurrency(totals.total, company.default_currency)}</span>
                         </div>
                     </div>
+                </section>
+            )}
+
+            {plainItems && (
+                <section className="mt-6">
+                    <table className="w-full border-collapse border border-neutral-900 text-xs">
+                        <thead>
+                            <tr className="bg-neutral-100">
+                                <th className="border-b border-neutral-900 px-2 py-2 text-center font-bold">
+                                    Nr.
+                                </th>
+                                <th className="border-b border-neutral-900 px-2 py-2 text-left font-bold">
+                                    Descrição
+                                </th>
+                                <th className="border-b border-neutral-900 px-2 py-2 text-center font-bold">
+                                    Qtd.
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {plainItems.map((item, index) => (
+                                <tr key={item.id} className="border-b border-neutral-200">
+                                    <td className="px-2 py-2 text-center">{index + 1}</td>
+                                    <td className="px-2 py-2">{item.description}</td>
+                                    <td className="px-2 py-2 text-center">{item.quantity}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </section>
             )}
 

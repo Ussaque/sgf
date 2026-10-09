@@ -11,7 +11,7 @@ export default function DeliveryNotePrint() {
     const [deliveryNote, setDeliveryNote] = useState<DeliveryNote | null>(null);
     const [company, setCompany] = useState<Company | null>(null);
     const [client, setClient] = useState<Client | null>(null);
-    const [invoiceNumber, setInvoiceNumber] = useState<string | undefined>();
+    const [receiptNumber, setReceiptNumber] = useState<string | undefined>();
     const documentRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -19,14 +19,14 @@ export default function DeliveryNotePrint() {
         api.getDeliveryNote(id).then(async (note) => {
             if (!note) return;
             setDeliveryNote(note);
-            const [comp, cli, inv] = await Promise.all([
+            const [comp, cli, rec] = await Promise.all([
                 api.getCompany(note.company_id),
                 api.getClient(note.client_id),
-                note.invoice_id ? api.getInvoice(note.invoice_id) : Promise.resolve(undefined),
+                note.receipt_id ? api.getReceipt(note.receipt_id) : Promise.resolve(undefined),
             ]);
             setCompany(comp ?? null);
             setClient(cli ?? null);
-            setInvoiceNumber(inv?.number);
+            setReceiptNumber(rec?.number);
         });
     }, [id]);
 
@@ -55,7 +55,7 @@ export default function DeliveryNotePrint() {
                 reference={deliveryNote.reference}
                 createdBy={deliveryNote.created_by}
                 receivedBy={deliveryNote.received_by}
-                relatedInvoiceNumber={invoiceNumber}
+                relatedReceiptNumber={receiptNumber}
                 stamp={deliveryNote.status === 'CANCELLED' ? 'CANCELADA' : undefined}
             />
         </>

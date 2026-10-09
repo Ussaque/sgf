@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
-import { Ban, Plus, Printer } from 'lucide-react';
+import { Ban, Plus, Printer, Truck } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { api } from '@/services/api';
@@ -235,6 +235,16 @@ export default function Receipts() {
         }
     }
 
+    async function handleGenerateDeliveryNote(receipt: Receipt) {
+        try {
+            const deliveryNote = await api.generateDeliveryNoteFromReceipt(receipt.id);
+            toast.success(`Guia ${deliveryNote.number} criada a partir do recibo`);
+            window.open(`/guias/${deliveryNote.id}/imprimir`, '_blank');
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Erro ao gerar guia de entrega');
+        }
+    }
+
     return (
         <div className="grid gap-4">
             <div className="flex items-center justify-between">
@@ -419,7 +429,7 @@ export default function Receipts() {
                                 <TableHead>Método</TableHead>
                                 <TableHead>Estado</TableHead>
                                 <TableHead className="text-right">Valor</TableHead>
-                                <TableHead className="w-24" />
+                                <TableHead className="w-32" />
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -445,6 +455,16 @@ export default function Receipts() {
                                                     onClick={() => setVoidingReceipt(receipt)}
                                                 >
                                                     <Ban />
+                                                </Button>
+                                            )}
+                                            {canEdit && !receipt.voided && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon-sm"
+                                                    title="Gerar guia de entrega"
+                                                    onClick={() => handleGenerateDeliveryNote(receipt)}
+                                                >
+                                                    <Truck />
                                                 </Button>
                                             )}
                                             <Button

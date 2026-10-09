@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import { Router } from 'express';
 import { pool, withTransaction, type Conn } from '../db';
 import { requireAuth, requireRole, canAccessCompany } from '../middleware/auth';
-import { mapReceipt } from '../rows';
+import { mapReceipt, mapDeliveryNote } from '../rows';
 import { generateDocumentNumber } from '../documentNumber';
 
 export const receiptsRouter = Router();
@@ -132,4 +132,59 @@ receiptsRouter.post('/:id/void', requireRole('USER'), async (req, res) => {
 
     const [updatedRows] = await pool.query<any[]>('SELECT * FROM receipts WHERE id = ?', [req.params.id]);
     res.json(mapReceipt(updatedRows[0]));
+});
+
+receiptsRouter.post('/:id/delivery-note', requireRole('USER'), async (req, res) => {
+    const [rows] = await pool.query<any[]>('SELECT * FROM receipts WHERE id = ?', [req.params.id]);
+    const receipt = rows[0];
+    if (!receipt || !canAccessCompany(req.user!, receipt.company_id)) {
+        return res.status(404).json({ error: 'Recibo não encontrado' });
+    }
+    const [invoiceRows] = await pool.query<any[]>('SELECT * FROM invoices WHERE id = ?', [receipt.invoice_id]);
+    const invoice = invoiceRows[0];
+    if (!invoice) return res.status(404).json({ error: 'Fatura do recibo não encontrada' });
+    const [items] = await pool.query<any[]>('SELECT * FROM invoice_items WHERE invoice_id = ?', [invoice.id]);
+
+    const deliveryNoteId = await withTransaction(async (conn) => {
+        const [companyRows] = await conn.query<any[]>(
+            'SELECT current_delivery_note_sequence, delivery_note_prefix FROM companies WHERE id = ? FOR UPDATE',
+            [receipt.company_id]
+        );
+        const company = companyRows[0];
+        const number = generateDocumentNumber(
+            company.delivery_note_prefix,
+            company.current_delivery_note_sequence
+        );
+        const newDeliveryNoteId = crypto.randomUUID();
+
+        await conn.query(
+            `INSERT INTO delivery_notes (id, company_id, client_id, number, date, status, receipt_id)
+             VALUES (?, ?, ?, ?, ?, 'SENT', ?)`,
+            [newDeliveryNoteId, receipt.company_id, invoice.client_id, number, new Date(), receipt.id]
+        );
+
+        for (const item of items) {
+            await conn.query(
+                `INSERT INTO delivery_note_items (id, delivery_note_id, description, quantity)
+                 VALUES (?, ?, ?, ?)`,
+                [crypto.randomUUID(), newDeliveryNoteId, item.description, item.quantity]
+            );
+        }
+
+        await conn.query(
+            'UPDATE companies SET current_delivery_note_sequence = current_delivery_note_sequence + 1 WHERE id = ?',
+            [receipt.company_id]
+        );
+
+        return newDeliveryNoteId;
+    });
+
+    const [deliveryNoteRows] = await pool.query<any[]>('SELECT * FROM delivery_notes WHERE id = ?', [
+        deliveryNoteId,
+    ]);
+    const [deliveryNoteItems] = await pool.query<any[]>(
+        'SELECT * FROM delivery_note_items WHERE delivery_note_id = ?',
+        [deliveryNoteId]
+    );
+    res.status(201).json(mapDeliveryNote(deliveryNoteRows[0], deliveryNoteItems));
 });

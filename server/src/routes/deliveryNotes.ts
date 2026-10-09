@@ -66,17 +66,14 @@ deliveryNotesRouter.post('/', requireRole('USER'), async (req, res) => {
         const deliveryNoteId = crypto.randomUUID();
 
         await conn.query(
-            `INSERT INTO delivery_notes (id, company_id, client_id, number, date, status, subtotal, tax_total, total, notes, reference, received_by, created_by)
-             VALUES (?, ?, ?, ?, ?, 'DRAFT', ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO delivery_notes (id, company_id, client_id, number, date, status, notes, reference, received_by, created_by)
+             VALUES (?, ?, ?, ?, ?, 'DRAFT', ?, ?, ?, ?)`,
             [
                 deliveryNoteId,
                 b.company_id,
                 b.client_id,
                 number,
                 new Date(b.date),
-                b.subtotal,
-                b.tax_total,
-                b.total,
                 b.notes ?? null,
                 b.reference ?? null,
                 b.received_by ?? null,
@@ -86,17 +83,9 @@ deliveryNotesRouter.post('/', requireRole('USER'), async (req, res) => {
 
         for (const item of b.items) {
             await conn.query(
-                `INSERT INTO delivery_note_items (id, delivery_note_id, description, quantity, unit_price, tax_rate, total)
-                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                [
-                    crypto.randomUUID(),
-                    deliveryNoteId,
-                    item.description,
-                    item.quantity,
-                    item.unit_price,
-                    item.tax_rate,
-                    item.total,
-                ]
+                `INSERT INTO delivery_note_items (id, delivery_note_id, description, quantity)
+                 VALUES (?, ?, ?, ?)`,
+                [crypto.randomUUID(), deliveryNoteId, item.description, item.quantity]
             );
         }
 
@@ -127,9 +116,6 @@ deliveryNotesRouter.patch('/:id', requireRole('USER'), async (req, res) => {
         const fieldMap: Record<string, [string, (v: any) => unknown]> = {
             client_id: ['client_id', (v) => v],
             status: ['status', (v) => v],
-            subtotal: ['subtotal', (v) => v],
-            tax_total: ['tax_total', (v) => v],
-            total: ['total', (v) => v],
             notes: ['notes', (v) => v ?? null],
             reference: ['reference', (v) => v ?? null],
             received_by: ['received_by', (v) => v ?? null],
@@ -151,17 +137,9 @@ deliveryNotesRouter.patch('/:id', requireRole('USER'), async (req, res) => {
             await conn.query('DELETE FROM delivery_note_items WHERE delivery_note_id = ?', [req.params.id]);
             for (const item of b.items) {
                 await conn.query(
-                    `INSERT INTO delivery_note_items (id, delivery_note_id, description, quantity, unit_price, tax_rate, total)
-                     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                    [
-                        crypto.randomUUID(),
-                        req.params.id,
-                        item.description,
-                        item.quantity,
-                        item.unit_price,
-                        item.tax_rate,
-                        item.total,
-                    ]
+                    `INSERT INTO delivery_note_items (id, delivery_note_id, description, quantity)
+                     VALUES (?, ?, ?, ?)`,
+                    [crypto.randomUUID(), req.params.id, item.description, item.quantity]
                 );
             }
         }

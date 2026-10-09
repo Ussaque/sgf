@@ -6,9 +6,8 @@ import { Pencil, Plus, Printer, Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { api } from '@/services/api';
-import type { Client, DeliveryNote, DeliveryNoteStatus, Invoice, InvoiceItem } from '@/types';
-import { computeTotals } from '@/lib/document-totals';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import type { Client, DeliveryNote, DeliveryNoteItem, DeliveryNoteStatus, Receipt } from '@/types';
+import { formatDate } from '@/lib/utils';
 import { DELIVERY_NOTE_STATUS_LABELS as STATUS_LABELS } from '@/lib/status-labels';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -62,7 +61,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { LineItemsEditor, emptyItem } from '@/components/document/line-items-editor';
+import { DeliveryItemsEditor, emptyDeliveryItem } from '@/components/document/delivery-items-editor';
 import { DocumentFilters, ALL_FILTER_VALUE } from '@/components/document/document-filters';
 import { DatePicker } from '@/components/date-picker';
 
@@ -79,7 +78,7 @@ type DeliveryNoteFormValues = {
     reference: string;
     received_by: string;
     notes: string;
-    items: InvoiceItem[];
+    items: DeliveryNoteItem[];
 };
 
 function today() {
@@ -89,12 +88,12 @@ function today() {
 export default function DeliveryNotes() {
     const { user, hasPermission } = useAuth();
     const canEdit = hasPermission('USER');
-    const { companyId, company } = useCompany();
+    const { companyId } = useCompany();
     const location = useLocation();
     const navigate = useNavigate();
     const [deliveryNotes, setDeliveryNotes] = useState<DeliveryNote[]>([]);
     const [clients, setClients] = useState<Client[]>([]);
-    const [invoices, setInvoices] = useState<Invoice[]>([]);
+    const [receipts, setReceipts] = useState<Receipt[]>([]);
     const [createOpen, setCreateOpen] = useState(false);
     const [editingNote, setEditingNote] = useState<DeliveryNote | null>(null);
     const [deletingNote, setDeletingNote] = useState<DeliveryNote | null>(null);
@@ -111,20 +110,20 @@ export default function DeliveryNotes() {
             reference: '',
             received_by: '',
             notes: '',
-            items: [emptyItem()],
+            items: [emptyDeliveryItem()],
         },
     });
 
     async function refresh() {
         if (!companyId) return;
-        const [notes, cls, invs] = await Promise.all([
+        const [notes, cls, recs] = await Promise.all([
             api.getDeliveryNotes(companyId),
             api.getClients(companyId),
-            api.getInvoices(companyId),
+            api.getReceipts(companyId),
         ]);
         setDeliveryNotes(notes.sort((a, b) => b.created_at.localeCompare(a.created_at)));
         setClients(cls);
-        setInvoices(invs);
+        setReceipts(recs);
     }
 
     useEffect(() => {
@@ -136,9 +135,9 @@ export default function DeliveryNotes() {
         return clients.find((c) => c.id === id)?.name ?? '—';
     }
 
-    function invoiceNumber(id?: string) {
+    function receiptNumber(id?: string) {
         if (!id) return undefined;
-        return invoices.find((i) => i.id === id)?.number;
+        return receipts.find((r) => r.id === id)?.number;
     }
 
     const filteredNotes = useMemo(() => {
@@ -180,7 +179,7 @@ export default function DeliveryNotes() {
             reference: '',
             received_by: '',
             notes: '',
-            items: [emptyItem(company?.default_tax_rate)],
+            items: [emptyDeliveryItem()],
         });
         setCreateOpen(true);
     }
@@ -214,21 +213,15 @@ export default function DeliveryNotes() {
             toast.error('Seleciona um cliente');
             return;
         }
-        const items = values.items.map((item) => ({
-            ...item,
-            total: item.quantity * item.unit_price * (1 + item.tax_rate / 100),
-        }));
-        const totals = computeTotals(items);
 
         if (editingNote) {
             await api.updateDeliveryNote({
                 ...editingNote,
                 client_id: values.client_id,
-                items,
+                items: values.items,
                 reference: values.reference || undefined,
                 received_by: values.received_by || undefined,
                 notes: values.notes || undefined,
-                ...totals,
             });
             toast.success('Guia de entrega atualizada com sucesso');
         } else {
@@ -236,12 +229,11 @@ export default function DeliveryNotes() {
                 company_id: companyId,
                 client_id: values.client_id,
                 date: new Date(values.date).toISOString(),
-                items,
+                items: values.items,
                 reference: values.reference || undefined,
                 received_by: values.received_by || undefined,
                 notes: values.notes || undefined,
                 created_by: user?.name,
-                ...totals,
             });
             toast.success('Guia de entrega criada com sucesso');
         }
@@ -337,7 +329,7 @@ export default function DeliveryNotes() {
                                     />
                                 </div>
 
-                                <LineItemsEditor />
+                                <DeliveryItemsEditor />
 
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     <FormField
@@ -431,8 +423,7 @@ export default function DeliveryNotes() {
                                 <TableHead>Cliente</TableHead>
                                 <TableHead>Data</TableHead>
                                 <TableHead>Estado</TableHead>
-                                <TableHead>Fatura</TableHead>
-                                <TableHead className="text-right">Total</TableHead>
+                                <TableHead>Recibo</TableHead>
                                 <TableHead className="w-32" />
                             </TableRow>
                         </TableHeader>
@@ -448,10 +439,7 @@ export default function DeliveryNotes() {
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-muted-foreground">
-                                        {invoiceNumber(note.invoice_id) ?? '—'}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        {formatCurrency(note.total, company?.default_currency)}
+                                        {receiptNumber(note.receipt_id) ?? '—'}
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex justify-end gap-1">
@@ -491,7 +479,7 @@ export default function DeliveryNotes() {
                             ))}
                             {filteredNotes.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={7} className="text-center text-muted-foreground">
+                                    <TableCell colSpan={6} className="text-center text-muted-foreground">
                                         {deliveryNotes.length === 0
                                             ? 'Ainda não há guias de entrega criadas.'
                                             : 'Nenhuma guia corresponde aos filtros.'}

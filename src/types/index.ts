@@ -129,6 +129,12 @@ export interface Quotation {
 
 export type DeliveryNoteStatus = 'DRAFT' | 'SENT' | 'DELIVERED' | 'CANCELLED';
 
+export interface DeliveryNoteItem {
+    id: string;
+    description: string;
+    quantity: number;
+}
+
 export interface DeliveryNote {
     id: string;
     company_id: string;
@@ -136,15 +142,12 @@ export interface DeliveryNote {
     number: string; // e.g., GR-2024-001
     date: string; // ISO Date string
     status: DeliveryNoteStatus;
-    items: InvoiceItem[];
-    subtotal: number;
-    tax_total: number;
-    total: number;
+    items: DeliveryNoteItem[]; // No pricing — a guia just proves what was delivered
     notes?: string;
     reference?: string;
     received_by?: string; // Name of the person who signed for the goods at the client
     created_by?: string;
-    invoice_id?: string; // The invoice this delivery note accompanies, if generated from one
+    receipt_id?: string; // The receipt this delivery note accompanies, if generated from one
     created_at: string;
     updated_at: string;
 }

@@ -138,6 +138,14 @@ export function mapQuotation(q: any, items: any[] = []) {
     };
 }
 
+function mapDeliveryNoteItem(i: any) {
+    return {
+        id: i.id,
+        description: i.description,
+        quantity: i.quantity,
+    };
+}
+
 export function mapDeliveryNote(d: any, items: any[] = []) {
     return {
         id: d.id,
@@ -146,15 +154,12 @@ export function mapDeliveryNote(d: any, items: any[] = []) {
         number: d.number,
         date: iso(d.date),
         status: d.status,
-        items: items.map(mapItem),
-        subtotal: d.subtotal,
-        tax_total: d.tax_total,
-        total: d.total,
+        items: items.map(mapDeliveryNoteItem),
         notes: opt(d.notes),
         reference: opt(d.reference),
         received_by: opt(d.received_by),
         created_by: opt(d.created_by),
-        invoice_id: opt(d.invoice_id),
+        receipt_id: opt(d.receipt_id),
         created_at: iso(d.created_at),
         updated_at: iso(d.updated_at),
     };
