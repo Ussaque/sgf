@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Ban, Pencil, Plus, Printer, Receipt as ReceiptIcon } from 'lucide-react';
+import { Ban, Pencil, Plus, Printer, Receipt as ReceiptIcon, Truck } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { api } from '@/services/api';
@@ -297,6 +297,16 @@ export default function Invoices() {
         refresh();
     }
 
+    async function handleGenerateDeliveryNote(invoice: Invoice) {
+        try {
+            const deliveryNote = await api.generateDeliveryNoteFromInvoice(invoice.id);
+            toast.success(`Guia ${deliveryNote.number} criada a partir da fatura`);
+            window.open(`/guias/${deliveryNote.id}/imprimir`, '_blank');
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Erro ao gerar guia de entrega');
+        }
+    }
+
     async function onSubmitPayment(values: PaymentFormValues) {
         if (!companyId || !paymentInvoice) return;
         if (!values.amount || values.amount <= 0) {
@@ -476,7 +486,7 @@ export default function Invoices() {
                                 <TableHead>Data</TableHead>
                                 <TableHead>Estado</TableHead>
                                 <TableHead className="text-right">Total</TableHead>
-                                <TableHead className="w-44" />
+                                <TableHead className="w-52" />
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -523,6 +533,16 @@ export default function Invoices() {
                                                     onClick={() => setCancellingInvoice(invoice)}
                                                 >
                                                     <Ban />
+                                                </Button>
+                                            )}
+                                            {canEdit && invoice.status !== 'CANCELLED' && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon-sm"
+                                                    title="Gerar guia de entrega"
+                                                    onClick={() => handleGenerateDeliveryNote(invoice)}
+                                                >
+                                                    <Truck />
                                                 </Button>
                                             )}
                                             <Button

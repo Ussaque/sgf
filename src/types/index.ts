@@ -144,7 +144,7 @@ export interface DeliveryNote {
     reference?: string;
     received_by?: string; // Name of the person who signed for the goods at the client
     created_by?: string;
-    converted_invoice_id?: string;
+    invoice_id?: string; // The invoice this delivery note accompanies, if generated from one
     created_at: string;
     updated_at: string;
 }

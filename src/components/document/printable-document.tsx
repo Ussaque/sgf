@@ -34,6 +34,8 @@ interface PrintableDocumentProps {
     createdBy?: string;
     /** Name of the person who signed for the goods — GUIA DE ENTREGA only. */
     receivedBy?: string;
+    /** Number of the invoice this document accompanies — GUIA DE ENTREGA only. */
+    relatedInvoiceNumber?: string;
     receiptInfo?: ReceiptInfo;
     /** Large diagonal watermark for a voided/cancelled document, e.g. "ANULADO" or "CANCELADA". */
     stamp?: string;
@@ -60,6 +62,7 @@ export function PrintableDocument({
     reference,
     createdBy,
     receivedBy,
+    relatedInvoiceNumber,
     receiptInfo,
     stamp,
     statusLabel,
@@ -136,6 +139,12 @@ export function PrintableDocument({
                             <div className="flex gap-3">
                                 <span className="w-36 shrink-0 text-neutral-500">Emitida por</span>
                                 <span>{createdBy}</span>
+                            </div>
+                        )}
+                        {relatedInvoiceNumber && (
+                            <div className="flex gap-3">
+                                <span className="w-36 shrink-0 text-neutral-500">Referente à fatura</span>
+                                <span>{relatedInvoiceNumber}</span>
                             </div>
                         )}
                     </div>

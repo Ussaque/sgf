@@ -154,7 +154,7 @@ export function mapDeliveryNote(d: any, items: any[] = []) {
         reference: opt(d.reference),
         received_by: opt(d.received_by),
         created_by: opt(d.created_by),
-        converted_invoice_id: opt(d.converted_invoice_id),
+        invoice_id: opt(d.invoice_id),
         created_at: iso(d.created_at),
         updated_at: iso(d.updated_at),
     };

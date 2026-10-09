@@ -196,7 +196,7 @@ export const api = {
         }
     },
     async createDeliveryNote(
-        data: Omit<DeliveryNote, 'id' | 'number' | 'status' | 'created_at' | 'updated_at' | 'converted_invoice_id'>
+        data: Omit<DeliveryNote, 'id' | 'number' | 'status' | 'created_at' | 'updated_at' | 'invoice_id'>
     ): Promise<DeliveryNote> {
         return post('/delivery-notes', data);
     },
@@ -206,8 +206,8 @@ export const api = {
     async deleteDeliveryNote(id: string): Promise<void> {
         return del(`/delivery-notes/${id}`);
     },
-    async convertDeliveryNoteToInvoice(id: string): Promise<Invoice> {
-        return post(`/delivery-notes/${id}/convert`);
+    async generateDeliveryNoteFromInvoice(invoiceId: string): Promise<DeliveryNote> {
+        return post(`/invoices/${invoiceId}/delivery-note`);
     },
 
     // Receipts

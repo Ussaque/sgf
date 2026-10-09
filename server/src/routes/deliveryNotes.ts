@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import { Router } from 'express';
 import { pool, withTransaction } from '../db';
 import { requireAuth, requireRole, canAccessCompany } from '../middleware/auth';
-import { mapDeliveryNote, mapInvoice } from '../rows';
+import { mapDeliveryNote } from '../rows';
 import { generateDocumentNumber } from '../documentNumber';
 
 export const deliveryNotesRouter = Router();
@@ -119,9 +119,6 @@ deliveryNotesRouter.patch('/:id', requireRole('USER'), async (req, res) => {
     if (!existing || !canAccessCompany(req.user!, existing.company_id)) {
         return res.status(404).json({ error: 'Guia de entrega não encontrada' });
     }
-    if (existing.converted_invoice_id) {
-        return res.status(409).json({ error: 'Não é possível editar uma guia já convertida em fatura' });
-    }
     const b = req.body;
 
     await withTransaction(async (conn) => {
@@ -181,78 +178,6 @@ deliveryNotesRouter.delete('/:id', requireRole('USER'), async (req, res) => {
     if (!existing || !canAccessCompany(req.user!, existing.company_id)) {
         return res.status(404).json({ error: 'Guia de entrega não encontrada' });
     }
-    if (existing.converted_invoice_id) {
-        return res.status(409).json({ error: 'Não é possível eliminar uma guia já convertida em fatura' });
-    }
     await pool.query('DELETE FROM delivery_notes WHERE id = ?', [req.params.id]);
     res.status(204).end();
-});
-
-deliveryNotesRouter.post('/:id/convert', requireRole('USER'), async (req, res) => {
-    const [rows] = await pool.query<any[]>('SELECT * FROM delivery_notes WHERE id = ?', [req.params.id]);
-    const deliveryNote = rows[0];
-    if (!deliveryNote || !canAccessCompany(req.user!, deliveryNote.company_id)) {
-        return res.status(404).json({ error: 'Guia de entrega não encontrada' });
-    }
-    if (deliveryNote.converted_invoice_id) {
-        return res.status(409).json({ error: 'Guia já foi convertida em fatura' });
-    }
-    const [items] = await pool.query<any[]>('SELECT * FROM delivery_note_items WHERE delivery_note_id = ?', [
-        req.params.id,
-    ]);
-
-    const invoiceId = await withTransaction(async (conn) => {
-        const [companyRows] = await conn.query<any[]>(
-            'SELECT current_invoice_sequence, invoice_prefix FROM companies WHERE id = ? FOR UPDATE',
-            [deliveryNote.company_id]
-        );
-        const company = companyRows[0];
-        const number = generateDocumentNumber(company.invoice_prefix, company.current_invoice_sequence);
-        const now = new Date();
-        const dueDate = new Date();
-        dueDate.setDate(dueDate.getDate() + 30);
-        const newInvoiceId = crypto.randomUUID();
-
-        await conn.query(
-            `INSERT INTO invoices (id, company_id, client_id, number, date, due_date, status, subtotal, tax_total, total, notes)
-             VALUES (?, ?, ?, ?, ?, ?, 'SENT', ?, ?, ?, ?)`,
-            [
-                newInvoiceId,
-                deliveryNote.company_id,
-                deliveryNote.client_id,
-                number,
-                now,
-                dueDate,
-                deliveryNote.subtotal,
-                deliveryNote.tax_total,
-                deliveryNote.total,
-                deliveryNote.notes,
-            ]
-        );
-
-        for (const item of items) {
-            await conn.query(
-                `INSERT INTO invoice_items (id, invoice_id, description, quantity, unit_price, tax_rate, total)
-                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                [crypto.randomUUID(), newInvoiceId, item.description, item.quantity, item.unit_price, item.tax_rate, item.total]
-            );
-        }
-
-        await conn.query('UPDATE companies SET current_invoice_sequence = current_invoice_sequence + 1 WHERE id = ?', [
-            deliveryNote.company_id,
-        ]);
-
-        await conn.query(
-            "UPDATE delivery_notes SET converted_invoice_id = ?, status = 'DELIVERED' WHERE id = ?",
-            [newInvoiceId, req.params.id]
-        );
-
-        return newInvoiceId;
-    });
-
-    const [invoiceRows] = await pool.query<any[]>('SELECT * FROM invoices WHERE id = ?', [invoiceId]);
-    const [invoiceItems] = await pool.query<any[]>('SELECT * FROM invoice_items WHERE invoice_id = ?', [
-        invoiceId,
-    ]);
-    res.status(201).json(mapInvoice(invoiceRows[0], invoiceItems));
 });

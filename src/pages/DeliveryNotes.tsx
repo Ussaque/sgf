@@ -2,11 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowRightLeft, Pencil, Plus, Printer, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Printer, Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { api } from '@/services/api';
-import type { Client, DeliveryNote, DeliveryNoteStatus, InvoiceItem } from '@/types';
+import type { Client, DeliveryNote, DeliveryNoteStatus, Invoice, InvoiceItem } from '@/types';
 import { computeTotals } from '@/lib/document-totals';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { DELIVERY_NOTE_STATUS_LABELS as STATUS_LABELS } from '@/lib/status-labels';
@@ -94,11 +94,10 @@ export default function DeliveryNotes() {
     const navigate = useNavigate();
     const [deliveryNotes, setDeliveryNotes] = useState<DeliveryNote[]>([]);
     const [clients, setClients] = useState<Client[]>([]);
+    const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [createOpen, setCreateOpen] = useState(false);
-    const [converting, setConverting] = useState<string | null>(null);
     const [editingNote, setEditingNote] = useState<DeliveryNote | null>(null);
     const [deletingNote, setDeletingNote] = useState<DeliveryNote | null>(null);
-    const [convertingNote, setConvertingNote] = useState<DeliveryNote | null>(null);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState(ALL_FILTER_VALUE);
     const [clientFilter, setClientFilter] = useState(ALL_FILTER_VALUE);
@@ -118,12 +117,14 @@ export default function DeliveryNotes() {
 
     async function refresh() {
         if (!companyId) return;
-        const [notes, cls] = await Promise.all([
+        const [notes, cls, invs] = await Promise.all([
             api.getDeliveryNotes(companyId),
             api.getClients(companyId),
+            api.getInvoices(companyId),
         ]);
         setDeliveryNotes(notes.sort((a, b) => b.created_at.localeCompare(a.created_at)));
         setClients(cls);
+        setInvoices(invs);
     }
 
     useEffect(() => {
@@ -133,6 +134,11 @@ export default function DeliveryNotes() {
 
     function clientName(id: string) {
         return clients.find((c) => c.id === id)?.name ?? '—';
+    }
+
+    function invoiceNumber(id?: string) {
+        if (!id) return undefined;
+        return invoices.find((i) => i.id === id)?.number;
     }
 
     const filteredNotes = useMemo(() => {
@@ -255,21 +261,6 @@ export default function DeliveryNotes() {
             toast.error(error instanceof Error ? error.message : 'Erro ao eliminar guia de entrega');
         } finally {
             setDeletingNote(null);
-        }
-    }
-
-    async function handleConvert() {
-        if (!convertingNote) return;
-        setConverting(convertingNote.id);
-        try {
-            const invoice = await api.convertDeliveryNoteToInvoice(convertingNote.id);
-            toast.success(`Fatura ${invoice.number} criada a partir da guia de entrega`);
-            navigate('/faturas');
-        } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Erro ao converter guia de entrega');
-        } finally {
-            setConverting(null);
-            setConvertingNote(null);
         }
     }
 
@@ -440,8 +431,9 @@ export default function DeliveryNotes() {
                                 <TableHead>Cliente</TableHead>
                                 <TableHead>Data</TableHead>
                                 <TableHead>Estado</TableHead>
+                                <TableHead>Fatura</TableHead>
                                 <TableHead className="text-right">Total</TableHead>
-                                <TableHead className="w-44" />
+                                <TableHead className="w-32" />
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -455,12 +447,15 @@ export default function DeliveryNotes() {
                                             {STATUS_LABELS[note.status]}
                                         </Badge>
                                     </TableCell>
+                                    <TableCell className="text-muted-foreground">
+                                        {invoiceNumber(note.invoice_id) ?? '—'}
+                                    </TableCell>
                                     <TableCell className="text-right">
                                         {formatCurrency(note.total, company?.default_currency)}
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex justify-end gap-1">
-                                            {canEdit && !note.converted_invoice_id && (
+                                            {canEdit && (
                                                 <>
                                                     <Button
                                                         variant="ghost"
@@ -477,15 +472,6 @@ export default function DeliveryNotes() {
                                                         onClick={() => setDeletingNote(note)}
                                                     >
                                                         <Trash2 />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon-sm"
-                                                        title="Converter em fatura"
-                                                        disabled={converting === note.id}
-                                                        onClick={() => setConvertingNote(note)}
-                                                    >
-                                                        <ArrowRightLeft />
                                                     </Button>
                                                 </>
                                             )}
@@ -505,7 +491,7 @@ export default function DeliveryNotes() {
                             ))}
                             {filteredNotes.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="text-center text-muted-foreground">
+                                    <TableCell colSpan={7} className="text-center text-muted-foreground">
                                         {deliveryNotes.length === 0
                                             ? 'Ainda não há guias de entrega criadas.'
                                             : 'Nenhuma guia corresponde aos filtros.'}
@@ -532,25 +518,6 @@ export default function DeliveryNotes() {
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
                         <AlertDialogAction onClick={handleDelete}>Eliminar</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-
-            <AlertDialog
-                open={!!convertingNote}
-                onOpenChange={(isOpen) => !isOpen && setConvertingNote(null)}
-            >
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Converter em fatura</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Tens a certeza que queres converter a guia {convertingNote?.number} numa
-                            fatura? Esta ação não pode ser desfeita e a guia passa a estado Entregue.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleConvert}>Converter</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

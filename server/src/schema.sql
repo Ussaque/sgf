@@ -174,7 +174,7 @@ CREATE TABLE IF NOT EXISTS delivery_notes (
   reference TEXT NULL,
   received_by VARCHAR(255) NULL,
   created_by VARCHAR(255) NULL,
-  converted_invoice_id VARCHAR(36) NULL,
+  invoice_id VARCHAR(36) NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (company_id) REFERENCES companies(id),

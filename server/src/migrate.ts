@@ -24,6 +24,21 @@ async function main() {
         }
     }
 
+    // One-off rename: early installs of delivery_notes used `converted_invoice_id` (guia -> fatura
+    // gerada a partir dela); the feature now runs the other way (fatura -> guia gerada a partir dela),
+    // so the column is renamed to `invoice_id`. Guarded by an information_schema check instead of a
+    // blind ALTER, since a fresh install's delivery_notes table never had the old column at all.
+    const [oldColumnRows] = await pool.query<any[]>(
+        `SELECT 1 FROM information_schema.columns
+         WHERE table_schema = DATABASE() AND table_name = 'delivery_notes' AND column_name = 'converted_invoice_id'`
+    );
+    if (oldColumnRows.length > 0) {
+        await pool.query(
+            'ALTER TABLE delivery_notes CHANGE COLUMN converted_invoice_id invoice_id VARCHAR(36) NULL'
+        );
+        console.log('(coluna renomeada) delivery_notes.converted_invoice_id -> invoice_id');
+    }
+
     console.log(`Schema aplicado (${statements.length} instruções).`);
     await pool.end();
 }
