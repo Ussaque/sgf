@@ -1,5 +1,5 @@
 import type {
-    User, Company, Client, Invoice, Quotation, Receipt, Product, Role
+    User, Company, Client, Invoice, Quotation, DeliveryNote, Receipt, Product, Role
 } from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api';
@@ -92,10 +92,12 @@ export const api = {
             | 'current_invoice_sequence'
             | 'current_receipt_sequence'
             | 'current_quotation_sequence'
+            | 'current_delivery_note_sequence'
             | 'default_currency'
             | 'invoice_prefix'
             | 'quotation_prefix'
             | 'receipt_prefix'
+            | 'delivery_note_prefix'
         >
     ): Promise<Company> {
         return post('/companies', data);
@@ -180,6 +182,32 @@ export const api = {
     },
     async convertQuotationToInvoice(id: string): Promise<Invoice> {
         return post(`/quotations/${id}/convert`);
+    },
+
+    // Delivery notes (guias de entrega)
+    async getDeliveryNotes(companyId: string): Promise<DeliveryNote[]> {
+        return get(`/delivery-notes?companyId=${companyId}`);
+    },
+    async getDeliveryNote(id: string): Promise<DeliveryNote | undefined> {
+        try {
+            return await get(`/delivery-notes/${id}`);
+        } catch {
+            return undefined;
+        }
+    },
+    async createDeliveryNote(
+        data: Omit<DeliveryNote, 'id' | 'number' | 'status' | 'created_at' | 'updated_at' | 'converted_invoice_id'>
+    ): Promise<DeliveryNote> {
+        return post('/delivery-notes', data);
+    },
+    async updateDeliveryNote(deliveryNote: DeliveryNote): Promise<DeliveryNote> {
+        return patch(`/delivery-notes/${deliveryNote.id}`, deliveryNote);
+    },
+    async deleteDeliveryNote(id: string): Promise<void> {
+        return del(`/delivery-notes/${id}`);
+    },
+    async convertDeliveryNoteToInvoice(id: string): Promise<Invoice> {
+        return post(`/delivery-notes/${id}/convert`);
     },
 
     // Receipts

@@ -21,12 +21,14 @@ CREATE TABLE IF NOT EXISTS companies (
   invoice_prefix VARCHAR(20) NOT NULL DEFAULT 'FAT',
   quotation_prefix VARCHAR(20) NOT NULL DEFAULT 'COT',
   receipt_prefix VARCHAR(20) NOT NULL DEFAULT 'REC',
+  delivery_note_prefix VARCHAR(20) NOT NULL DEFAULT 'GR',
   mpesa_number VARCHAR(50) NULL,
   emola_number VARCHAR(50) NULL,
   payment_notes TEXT NULL,
   current_invoice_sequence INT NOT NULL DEFAULT 1,
   current_receipt_sequence INT NOT NULL DEFAULT 1,
   current_quotation_sequence INT NOT NULL DEFAULT 1,
+  current_delivery_note_sequence INT NOT NULL DEFAULT 1,
   FOREIGN KEY (organization_id) REFERENCES organizations(id),
   INDEX (organization_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -158,6 +160,41 @@ CREATE TABLE IF NOT EXISTS quotation_items (
   INDEX (quotation_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS delivery_notes (
+  id VARCHAR(36) PRIMARY KEY,
+  company_id VARCHAR(36) NOT NULL,
+  client_id VARCHAR(36) NOT NULL,
+  number VARCHAR(50) NOT NULL,
+  date DATETIME NOT NULL,
+  status ENUM('DRAFT', 'SENT', 'DELIVERED', 'CANCELLED') NOT NULL DEFAULT 'DRAFT',
+  subtotal DOUBLE NOT NULL,
+  tax_total DOUBLE NOT NULL,
+  total DOUBLE NOT NULL,
+  notes TEXT NULL,
+  reference TEXT NULL,
+  received_by VARCHAR(255) NULL,
+  created_by VARCHAR(255) NULL,
+  converted_invoice_id VARCHAR(36) NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (company_id) REFERENCES companies(id),
+  FOREIGN KEY (client_id) REFERENCES clients(id),
+  INDEX (company_id),
+  INDEX (client_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS delivery_note_items (
+  id VARCHAR(36) PRIMARY KEY,
+  delivery_note_id VARCHAR(36) NOT NULL,
+  description TEXT NOT NULL,
+  quantity DOUBLE NOT NULL,
+  unit_price DOUBLE NOT NULL,
+  tax_rate DOUBLE NOT NULL,
+  total DOUBLE NOT NULL,
+  FOREIGN KEY (delivery_note_id) REFERENCES delivery_notes(id) ON DELETE CASCADE,
+  INDEX (delivery_note_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS receipts (
   id VARCHAR(36) PRIMARY KEY,
   company_id VARCHAR(36) NOT NULL,
@@ -182,3 +219,5 @@ ALTER TABLE companies ADD COLUMN invoice_prefix VARCHAR(20) NOT NULL DEFAULT 'FA
 ALTER TABLE companies ADD COLUMN quotation_prefix VARCHAR(20) NOT NULL DEFAULT 'COT';
 ALTER TABLE companies ADD COLUMN receipt_prefix VARCHAR(20) NOT NULL DEFAULT 'REC';
 ALTER TABLE invoices MODIFY status ENUM('DRAFT', 'SENT', 'PARTIALLY_PAID', 'PAID', 'OVERDUE', 'CANCELLED') NOT NULL DEFAULT 'SENT';
+ALTER TABLE companies ADD COLUMN delivery_note_prefix VARCHAR(20) NOT NULL DEFAULT 'GR';
+ALTER TABLE companies ADD COLUMN current_delivery_note_sequence INT NOT NULL DEFAULT 1;

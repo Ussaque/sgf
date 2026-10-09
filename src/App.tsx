@@ -10,6 +10,8 @@ import Invoices from '@/pages/Invoices';
 import InvoicePrint from '@/pages/InvoicePrint';
 import Quotations from '@/pages/Quotations';
 import QuotationPrint from '@/pages/QuotationPrint';
+import DeliveryNotes from '@/pages/DeliveryNotes';
+import DeliveryNotePrint from '@/pages/DeliveryNotePrint';
 import Receipts from '@/pages/Receipts';
 import ReceiptPrint from '@/pages/ReceiptPrint';
 import Users from '@/pages/Users';
@@ -42,6 +44,14 @@ function App() {
                     }
                 />
                 <Route
+                    path="/guias/:id/imprimir"
+                    element={
+                        <ProtectedRoute>
+                            <DeliveryNotePrint />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
                     path="/recibos/:id/imprimir"
                     element={
                         <ProtectedRoute>
@@ -67,6 +77,7 @@ function App() {
                 >
                     <Route path="/" element={<Dashboard />} />
                     <Route path="/cotacoes" element={<Quotations />} />
+                    <Route path="/guias" element={<DeliveryNotes />} />
                     <Route path="/faturas" element={<Invoices />} />
                     <Route path="/recibos" element={<Receipts />} />
                     <Route path="/extratos" element={<Statements />} />

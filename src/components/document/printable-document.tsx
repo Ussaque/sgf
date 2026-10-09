@@ -20,7 +20,7 @@ type ReceiptInfo = {
 };
 
 interface PrintableDocumentProps {
-    documentType: 'FATURA' | 'RECIBO' | 'COTAÇÃO';
+    documentType: 'FATURA' | 'RECIBO' | 'COTAÇÃO' | 'GUIA DE ENTREGA';
     company: Company;
     client: Client;
     number: string;
@@ -32,6 +32,8 @@ interface PrintableDocumentProps {
     reference?: string;
     /** Name of the user who issued the document. */
     createdBy?: string;
+    /** Name of the person who signed for the goods — GUIA DE ENTREGA only. */
+    receivedBy?: string;
     receiptInfo?: ReceiptInfo;
     /** Large diagonal watermark for a voided/cancelled document, e.g. "ANULADO" or "CANCELADA". */
     stamp?: string;
@@ -57,6 +59,7 @@ export function PrintableDocument({
     notes,
     reference,
     createdBy,
+    receivedBy,
     receiptInfo,
     stamp,
     statusLabel,
@@ -66,6 +69,7 @@ export function PrintableDocument({
     const totals = items ? computeTotals(items) : null;
     const hasPaymentInfo =
         documentType !== 'RECIBO' &&
+        documentType !== 'GUIA DE ENTREGA' &&
         Boolean(
             (company.bank_accounts && company.bank_accounts.length > 0) ||
                 company.mpesa_number ||
@@ -276,6 +280,24 @@ export function PrintableDocument({
                 <section className="mt-6">
                     <p className="text-xs font-bold tracking-wide text-neutral-500 uppercase">Notas</p>
                     <p className="mt-1 text-xs whitespace-pre-wrap text-neutral-700">{notes}</p>
+                </section>
+            )}
+
+            {documentType === 'GUIA DE ENTREGA' && (
+                <section className="mt-10 grid grid-cols-2 gap-10 text-xs">
+                    <div className="grid gap-8">
+                        <p className="font-bold tracking-wide text-neutral-500 uppercase">Entregue por</p>
+                        <div className="grid gap-1 border-t border-neutral-400 pt-1">
+                            <span className="text-neutral-500">Nome, assinatura e data</span>
+                        </div>
+                    </div>
+                    <div className="grid gap-8">
+                        <p className="font-bold tracking-wide text-neutral-500 uppercase">Recebido por</p>
+                        <div className="grid gap-1 border-t border-neutral-400 pt-1">
+                            {receivedBy && <span className="font-medium text-neutral-900">{receivedBy}</span>}
+                            <span className="text-neutral-500">Nome, assinatura e data</span>
+                        </div>
+                    </div>
                 </section>
             )}
 

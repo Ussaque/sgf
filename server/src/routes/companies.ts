@@ -9,6 +9,12 @@ const SEQUENCE_CHECKS = [
     { field: 'current_invoice_sequence', prefixField: 'invoice_prefix', table: 'invoices', label: 'fatura' },
     { field: 'current_quotation_sequence', prefixField: 'quotation_prefix', table: 'quotations', label: 'cotação' },
     { field: 'current_receipt_sequence', prefixField: 'receipt_prefix', table: 'receipts', label: 'recibo' },
+    {
+        field: 'current_delivery_note_sequence',
+        prefixField: 'delivery_note_prefix',
+        table: 'delivery_notes',
+        label: 'guia de entrega',
+    },
 ] as const;
 
 export const companiesRouter = Router();
@@ -123,12 +129,14 @@ companiesRouter.patch('/:id', requireRole('ADMIN'), async (req, res) => {
         invoice_prefix: 'invoice_prefix',
         quotation_prefix: 'quotation_prefix',
         receipt_prefix: 'receipt_prefix',
+        delivery_note_prefix: 'delivery_note_prefix',
         mpesa_number: 'mpesa_number',
         emola_number: 'emola_number',
         payment_notes: 'payment_notes',
         current_invoice_sequence: 'current_invoice_sequence',
         current_receipt_sequence: 'current_receipt_sequence',
         current_quotation_sequence: 'current_quotation_sequence',
+        current_delivery_note_sequence: 'current_delivery_note_sequence',
     };
 
     const sets: string[] = [];

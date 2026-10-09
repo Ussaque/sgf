@@ -34,6 +34,7 @@ export interface Company {
     invoice_prefix: string; // e.g. "FAT" -> FAT-2026-001
     quotation_prefix: string; // e.g. "COT" -> COT-2026-001
     receipt_prefix: string; // e.g. "REC" -> REC-2026-001
+    delivery_note_prefix: string; // e.g. "GR" -> GR-2026-001
     bank_accounts?: BankAccount[];
     mpesa_number?: string;
     emola_number?: string;
@@ -41,6 +42,7 @@ export interface Company {
     current_invoice_sequence: number;
     current_receipt_sequence: number;
     current_quotation_sequence: number;
+    current_delivery_note_sequence: number;
 }
 
 export interface User {
@@ -119,6 +121,28 @@ export interface Quotation {
     total: number;
     notes?: string;
     reference?: string;
+    created_by?: string;
+    converted_invoice_id?: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export type DeliveryNoteStatus = 'DRAFT' | 'SENT' | 'DELIVERED' | 'CANCELLED';
+
+export interface DeliveryNote {
+    id: string;
+    company_id: string;
+    client_id: string;
+    number: string; // e.g., GR-2024-001
+    date: string; // ISO Date string
+    status: DeliveryNoteStatus;
+    items: InvoiceItem[];
+    subtotal: number;
+    tax_total: number;
+    total: number;
+    notes?: string;
+    reference?: string;
+    received_by?: string; // Name of the person who signed for the goods at the client
     created_by?: string;
     converted_invoice_id?: string;
     created_at: string;

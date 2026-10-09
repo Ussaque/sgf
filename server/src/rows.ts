@@ -36,6 +36,7 @@ export function mapCompany(c: any, bankAccounts: any[] = []) {
         invoice_prefix: c.invoice_prefix,
         quotation_prefix: c.quotation_prefix,
         receipt_prefix: c.receipt_prefix,
+        delivery_note_prefix: c.delivery_note_prefix,
         bank_accounts: bankAccounts.map(mapBankAccount),
         mpesa_number: opt(c.mpesa_number),
         emola_number: opt(c.emola_number),
@@ -43,6 +44,7 @@ export function mapCompany(c: any, bankAccounts: any[] = []) {
         current_invoice_sequence: c.current_invoice_sequence,
         current_receipt_sequence: c.current_receipt_sequence,
         current_quotation_sequence: c.current_quotation_sequence,
+        current_delivery_note_sequence: c.current_delivery_note_sequence,
     };
 }
 
@@ -133,6 +135,28 @@ export function mapQuotation(q: any, items: any[] = []) {
         converted_invoice_id: opt(q.converted_invoice_id),
         created_at: iso(q.created_at),
         updated_at: iso(q.updated_at),
+    };
+}
+
+export function mapDeliveryNote(d: any, items: any[] = []) {
+    return {
+        id: d.id,
+        company_id: d.company_id,
+        client_id: d.client_id,
+        number: d.number,
+        date: iso(d.date),
+        status: d.status,
+        items: items.map(mapItem),
+        subtotal: d.subtotal,
+        tax_total: d.tax_total,
+        total: d.total,
+        notes: opt(d.notes),
+        reference: opt(d.reference),
+        received_by: opt(d.received_by),
+        created_by: opt(d.created_by),
+        converted_invoice_id: opt(d.converted_invoice_id),
+        created_at: iso(d.created_at),
+        updated_at: iso(d.updated_at),
     };
 }
 

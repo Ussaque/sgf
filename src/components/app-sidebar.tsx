@@ -12,6 +12,7 @@ import {
     Package,
     Receipt,
     Settings,
+    Truck,
     Users,
     UserCircle,
     UserCog,
@@ -64,6 +65,7 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
     { title: 'Dashboard', url: '/', icon: LayoutDashboard },
     { title: 'Cotações', url: '/cotacoes', icon: FileSpreadsheet },
+    { title: 'Guias de entrega', url: '/guias', icon: Truck },
     { title: 'Faturas', url: '/faturas', icon: FileText },
     { title: 'Recibos', url: '/recibos', icon: Receipt },
     { title: 'Extratos', url: '/extratos', icon: FileBarChart },

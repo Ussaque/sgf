@@ -11,6 +11,7 @@ import { clientsRouter } from './routes/clients';
 import { productsRouter } from './routes/products';
 import { invoicesRouter } from './routes/invoices';
 import { quotationsRouter } from './routes/quotations';
+import { deliveryNotesRouter } from './routes/deliveryNotes';
 import { receiptsRouter } from './routes/receipts';
 import { metricsRouter } from './routes/metrics';
 
@@ -40,6 +41,7 @@ app.use('/api/clients', clientsRouter);
 app.use('/api/products', productsRouter);
 app.use('/api/invoices', invoicesRouter);
 app.use('/api/quotations', quotationsRouter);
+app.use('/api/delivery-notes', deliveryNotesRouter);
 app.use('/api/receipts', receiptsRouter);
 app.use('/api/metrics', metricsRouter);
 

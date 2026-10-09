@@ -52,9 +52,11 @@ type BillingFormValues = {
     invoice_prefix: string;
     quotation_prefix: string;
     receipt_prefix: string;
+    delivery_note_prefix: string;
     current_invoice_sequence: number;
     current_receipt_sequence: number;
     current_quotation_sequence: number;
+    current_delivery_note_sequence: number;
     bank_accounts: BankAccount[];
     mpesa_number: string;
     emola_number: string;
@@ -88,9 +90,11 @@ function BillingTab({ company }: { company: Company }) {
             invoice_prefix: company.invoice_prefix,
             quotation_prefix: company.quotation_prefix,
             receipt_prefix: company.receipt_prefix,
+            delivery_note_prefix: company.delivery_note_prefix,
             current_invoice_sequence: company.current_invoice_sequence,
             current_receipt_sequence: company.current_receipt_sequence,
             current_quotation_sequence: company.current_quotation_sequence,
+            current_delivery_note_sequence: company.current_delivery_note_sequence,
             bank_accounts: company.bank_accounts ?? [],
             mpesa_number: company.mpesa_number ?? '',
             emola_number: company.emola_number ?? '',
@@ -109,9 +113,11 @@ function BillingTab({ company }: { company: Company }) {
             invoice_prefix: formValues.invoice_prefix,
             quotation_prefix: formValues.quotation_prefix,
             receipt_prefix: formValues.receipt_prefix,
+            delivery_note_prefix: formValues.delivery_note_prefix,
             current_invoice_sequence: formValues.current_invoice_sequence,
             current_receipt_sequence: formValues.current_receipt_sequence,
             current_quotation_sequence: formValues.current_quotation_sequence,
+            current_delivery_note_sequence: formValues.current_delivery_note_sequence,
             bank_accounts: formValues.bank_accounts.filter((a) => a.bank_name || a.account_number),
             mpesa_number: formValues.mpesa_number,
             emola_number: formValues.emola_number,
@@ -212,7 +218,7 @@ function BillingTab({ company }: { company: Company }) {
                             </p>
                         </div>
 
-                        <div className="grid gap-4 sm:grid-cols-3">
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                             <div className="grid gap-2">
                                 <FormField
                                     control={form.control}
@@ -329,6 +335,47 @@ function BillingTab({ company }: { company: Company }) {
                                                 {previewNumber(
                                                     values.receipt_prefix || 'REC',
                                                     values.current_receipt_sequence || 1
+                                                )}
+                                            </p>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                            <div className="grid gap-2">
+                                <FormField
+                                    control={form.control}
+                                    name="delivery_note_prefix"
+                                    rules={{ required: true }}
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Prefixo das guias</FormLabel>
+                                            <FormControl>
+                                                <Input {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="current_delivery_note_sequence"
+                                    rules={{ required: true, min: 1 }}
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Próxima guia</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="number"
+                                                    min={1}
+                                                    {...field}
+                                                    onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                                                />
+                                            </FormControl>
+                                            <p className="text-xs text-muted-foreground">
+                                                {previewNumber(
+                                                    values.delivery_note_prefix || 'GR',
+                                                    values.current_delivery_note_sequence || 1
                                                 )}
                                             </p>
                                             <FormMessage />
