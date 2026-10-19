@@ -208,9 +208,6 @@ export function PrintableDocument({
                                 <th className="border-b border-neutral-900 px-2 py-2 text-right font-bold">
                                     Preço unitário
                                 </th>
-                                <th className="border-b border-neutral-900 px-2 py-2 text-center font-bold">
-                                    IVA
-                                </th>
                                 <th className="border-b border-neutral-900 px-2 py-2 text-right font-bold">
                                     Total
                                 </th>
@@ -225,7 +222,6 @@ export function PrintableDocument({
                                     <td className="px-2 py-2 text-right font-mono">
                                         {formatCurrency(item.unit_price, company.default_currency)}
                                     </td>
-                                    <td className="px-2 py-2 text-center">{item.tax_rate}%</td>
                                     <td className="px-2 py-2 text-right font-mono">
                                         {formatCurrency(
                                             item.quantity * item.unit_price * (1 + item.tax_rate / 100),
