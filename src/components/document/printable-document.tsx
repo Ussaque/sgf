@@ -241,7 +241,7 @@ export function PrintableDocument({
                             </span>
                         </div>
                         <div className="flex justify-between border-b border-neutral-200 py-1.5">
-                            <span className="text-neutral-600">Total impostos</span>
+                            <span className="text-neutral-600">IVA</span>
                             <span className="font-mono">
                                 {formatCurrency(totals.tax_total, company.default_currency)}
                             </span>
