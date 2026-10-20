@@ -148,7 +148,7 @@ export default function DeliveryNotes() {
             if (dateFrom && note.date.slice(0, 10) < dateFrom) return false;
             if (dateTo && note.date.slice(0, 10) > dateTo) return false;
             if (term) {
-                const haystack = `${note.number} ${clientName(note.client_id)}`.toLowerCase();
+                const haystack = `${note.number} ${clientName(note.client_id)} ${note.created_by ?? ''}`.toLowerCase();
                 if (!haystack.includes(term)) return false;
             }
             return true;
@@ -424,6 +424,7 @@ export default function DeliveryNotes() {
                                 <TableHead>Data</TableHead>
                                 <TableHead>Estado</TableHead>
                                 <TableHead>Recibo</TableHead>
+                                <TableHead>Criado por</TableHead>
                                 <TableHead className="w-32" />
                             </TableRow>
                         </TableHeader>
@@ -441,6 +442,7 @@ export default function DeliveryNotes() {
                                     <TableCell className="text-muted-foreground">
                                         {receiptNumber(note.receipt_id) ?? '—'}
                                     </TableCell>
+                                    <TableCell className="text-muted-foreground">{note.created_by ?? '—'}</TableCell>
                                     <TableCell>
                                         <div className="flex justify-end gap-1">
                                             {canEdit && (
@@ -479,7 +481,7 @@ export default function DeliveryNotes() {
                             ))}
                             {filteredNotes.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="text-center text-muted-foreground">
+                                    <TableCell colSpan={7} className="text-center text-muted-foreground">
                                         {deliveryNotes.length === 0
                                             ? 'Ainda não há guias de entrega criadas.'
                                             : 'Nenhuma guia corresponde aos filtros.'}

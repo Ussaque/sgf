@@ -176,6 +176,7 @@ export function mapReceipt(r: any) {
         method: r.method,
         reference: opt(r.reference),
         voided: Boolean(r.voided),
+        created_by: opt(r.created_by),
         created_at: iso(r.created_at),
     };
 }

@@ -144,7 +144,7 @@ export default function Quotations() {
             if (dateFrom && quotation.date.slice(0, 10) < dateFrom) return false;
             if (dateTo && quotation.date.slice(0, 10) > dateTo) return false;
             if (term) {
-                const haystack = `${quotation.number} ${clientName(quotation.client_id)}`.toLowerCase();
+                const haystack = `${quotation.number} ${clientName(quotation.client_id)} ${quotation.created_by ?? ''}`.toLowerCase();
                 if (!haystack.includes(term)) return false;
             }
             return true;
@@ -422,6 +422,7 @@ export default function Quotations() {
                                 <TableHead>Cliente</TableHead>
                                 <TableHead>Data</TableHead>
                                 <TableHead>Estado</TableHead>
+                                <TableHead>Criado por</TableHead>
                                 <TableHead className="text-right">Total</TableHead>
                                 <TableHead className="w-44" />
                             </TableRow>
@@ -437,6 +438,7 @@ export default function Quotations() {
                                             {STATUS_LABELS[quotation.status]}
                                         </Badge>
                                     </TableCell>
+                                    <TableCell className="text-muted-foreground">{quotation.created_by ?? '—'}</TableCell>
                                     <TableCell className="text-right">
                                         {formatCurrency(quotation.total, company?.default_currency)}
                                     </TableCell>
@@ -487,7 +489,7 @@ export default function Quotations() {
                             ))}
                             {filteredQuotations.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="text-center text-muted-foreground">
+                                    <TableCell colSpan={7} className="text-center text-muted-foreground">
                                         {quotations.length === 0
                                             ? 'Ainda não há cotações criadas.'
                                             : 'Nenhuma cotação corresponde aos filtros.'}

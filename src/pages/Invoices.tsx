@@ -180,7 +180,7 @@ export default function Invoices() {
             if (dateFrom && invoice.date.slice(0, 10) < dateFrom) return false;
             if (dateTo && invoice.date.slice(0, 10) > dateTo) return false;
             if (term) {
-                const haystack = `${invoice.number} ${clientName(invoice.client_id)}`.toLowerCase();
+                const haystack = `${invoice.number} ${clientName(invoice.client_id)} ${invoice.created_by ?? ''}`.toLowerCase();
                 if (!haystack.includes(term)) return false;
             }
             return true;
@@ -475,6 +475,7 @@ export default function Invoices() {
                                 <TableHead>Cliente</TableHead>
                                 <TableHead>Data</TableHead>
                                 <TableHead>Estado</TableHead>
+                                <TableHead>Criado por</TableHead>
                                 <TableHead className="text-right">Total</TableHead>
                                 <TableHead className="w-44" />
                             </TableRow>
@@ -490,6 +491,7 @@ export default function Invoices() {
                                             {STATUS_LABELS[invoice.status]}
                                         </Badge>
                                     </TableCell>
+                                    <TableCell className="text-muted-foreground">{invoice.created_by ?? '—'}</TableCell>
                                     <TableCell className="text-right">
                                         {formatCurrency(invoice.total, company?.default_currency)}
                                     </TableCell>
@@ -541,7 +543,7 @@ export default function Invoices() {
                             ))}
                             {filteredInvoices.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="text-center text-muted-foreground">
+                                    <TableCell colSpan={7} className="text-center text-muted-foreground">
                                         {invoices.length === 0
                                             ? 'Ainda não há faturas emitidas.'
                                             : 'Nenhuma fatura corresponde aos filtros.'}

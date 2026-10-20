@@ -162,5 +162,6 @@ export interface Receipt {
     method: 'CASH' | 'BANK_TRANSFER' | 'CHECK' | 'POS' | 'MOBILE_MONEY';
     reference?: string;
     voided?: boolean;
+    created_by?: string;
     created_at: string;
 }

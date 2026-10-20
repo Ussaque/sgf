@@ -84,7 +84,7 @@ type ReceiptFormValues = {
 };
 
 export default function Receipts() {
-    const { hasPermission } = useAuth();
+    const { user, hasPermission } = useAuth();
     const canEdit = hasPermission('USER');
     const { companyId, company } = useCompany();
     const [receipts, setReceipts] = useState<Receipt[]>([]);
@@ -152,7 +152,7 @@ export default function Receipts() {
             if (dateFrom && receipt.date.slice(0, 10) < dateFrom) return false;
             if (dateTo && receipt.date.slice(0, 10) > dateTo) return false;
             if (term) {
-                const haystack = `${receipt.number} ${invoiceNumber(receipt.invoice_id)} ${receipt.reference ?? ''}`.toLowerCase();
+                const haystack = `${receipt.number} ${invoiceNumber(receipt.invoice_id)} ${receipt.reference ?? ''} ${receipt.created_by ?? ''}`.toLowerCase();
                 if (!haystack.includes(term)) return false;
             }
             return true;
@@ -207,6 +207,7 @@ export default function Receipts() {
             amount: values.amount,
             method: values.method as Receipt['method'],
             reference: values.reference || undefined,
+            created_by: user?.name,
         });
 
         const due = amountDue(invoice);
@@ -428,6 +429,7 @@ export default function Receipts() {
                                 <TableHead>Data</TableHead>
                                 <TableHead>Método</TableHead>
                                 <TableHead>Estado</TableHead>
+                                <TableHead>Criado por</TableHead>
                                 <TableHead className="text-right">Valor</TableHead>
                                 <TableHead className="w-32" />
                             </TableRow>
@@ -444,6 +446,7 @@ export default function Receipts() {
                                             {receipt.voided ? 'Anulado' : 'Emitido'}
                                         </Badge>
                                     </TableCell>
+                                    <TableCell className="text-muted-foreground">{receipt.created_by ?? '—'}</TableCell>
                                     <TableCell className="text-right">{formatCurrency(receipt.amount, company?.default_currency)}</TableCell>
                                     <TableCell>
                                         <div className="flex justify-end gap-1">
@@ -483,7 +486,7 @@ export default function Receipts() {
                             ))}
                             {filteredReceipts.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={7} className="text-center text-muted-foreground">
+                                    <TableCell colSpan={8} className="text-center text-muted-foreground">
                                         {receipts.length === 0
                                             ? 'Ainda não há recibos emitidos.'
                                             : 'Nenhum recibo corresponde aos filtros.'}

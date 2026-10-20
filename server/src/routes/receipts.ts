@@ -72,9 +72,19 @@ receiptsRouter.post('/', requireRole('USER'), async (req, res) => {
         const overpaid = totalPaid - invoice.total;
 
         await conn.query(
-            `INSERT INTO receipts (id, company_id, invoice_id, number, date, amount, method, reference)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            [receiptId, b.company_id, b.invoice_id, number, new Date(b.date), b.amount, b.method, b.reference ?? null]
+            `INSERT INTO receipts (id, company_id, invoice_id, number, date, amount, method, reference, created_by)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                receiptId,
+                b.company_id,
+                b.invoice_id,
+                number,
+                new Date(b.date),
+                b.amount,
+                b.method,
+                b.reference ?? null,
+                b.created_by ?? null,
+            ]
         );
 
         await conn.query(
