@@ -33,6 +33,7 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    SidebarSeparator,
 } from '@/components/ui/sidebar';
 import {
     DropdownMenu,
@@ -62,17 +63,39 @@ type NavItem = {
     minRole?: Role;
 };
 
-const NAV_ITEMS: NavItem[] = [
-    { title: 'Dashboard', url: '/', icon: LayoutDashboard },
-    { title: 'Cotações', url: '/cotacoes', icon: FileSpreadsheet },
-    { title: 'Guias de entrega', url: '/guias', icon: Truck },
-    { title: 'Faturas', url: '/faturas', icon: FileText },
-    { title: 'Recibos', url: '/recibos', icon: Receipt },
-    { title: 'Extratos', url: '/extratos', icon: FileBarChart },
-    { title: 'Clientes', url: '/clientes', icon: Users },
-    { title: 'Produtos & Serviços', url: '/produtos', icon: Package },
-    { title: 'Empresas', url: '/empresas', icon: Building2, minRole: 'ADMIN' },
-    { title: 'Utilizadores', url: '/utilizadores', icon: UserCog, minRole: 'ADMIN' },
+type NavSection = {
+    label?: string;
+    items: NavItem[];
+};
+
+const NAV_SECTIONS: NavSection[] = [
+    {
+        items: [{ title: 'Dashboard', url: '/', icon: LayoutDashboard }],
+    },
+    {
+        label: 'Documentos',
+        items: [
+            { title: 'Cotações', url: '/cotacoes', icon: FileSpreadsheet },
+            { title: 'Guias de entrega', url: '/guias', icon: Truck },
+            { title: 'Faturas', url: '/faturas', icon: FileText },
+            { title: 'Recibos', url: '/recibos', icon: Receipt },
+            { title: 'Extratos', url: '/extratos', icon: FileBarChart },
+        ],
+    },
+    {
+        label: 'Cadastro',
+        items: [
+            { title: 'Clientes', url: '/clientes', icon: Users },
+            { title: 'Produtos & Serviços', url: '/produtos', icon: Package },
+        ],
+    },
+    {
+        label: 'Administração',
+        items: [
+            { title: 'Empresas', url: '/empresas', icon: Building2, minRole: 'ADMIN' },
+            { title: 'Utilizadores', url: '/utilizadores', icon: UserCog, minRole: 'ADMIN' },
+        ],
+    },
 ];
 
 function initials(name: string) {
@@ -90,7 +113,10 @@ export function AppSidebar() {
     const location = useLocation();
     const [confirmLogoutOpen, setConfirmLogoutOpen] = useState(false);
 
-    const items = NAV_ITEMS.filter((item) => !item.minRole || hasPermission(item.minRole));
+    const sections = NAV_SECTIONS.map((section) => ({
+        ...section,
+        items: section.items.filter((item) => !item.minRole || hasPermission(item.minRole)),
+    })).filter((section) => section.items.length > 0);
     const canSwitchCompany = companies.length > 1;
 
     return (
@@ -159,27 +185,32 @@ export function AppSidebar() {
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarHeader>
+            <SidebarSeparator className="mx-0" />
             <SidebarContent>
-                <SidebarGroup>
-                    <SidebarGroupLabel>Navegação</SidebarGroupLabel>
-                    <SidebarGroupContent>
-                        <SidebarMenu>
-                            {items.map((item) => (
-                                <SidebarMenuItem key={item.url}>
-                                    <SidebarMenuButton
-                                        tooltip={item.title}
-                                        isActive={location.pathname === item.url}
-                                        render={<Link to={item.url} />}
-                                    >
-                                        <item.icon />
-                                        <span>{item.title}</span>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                            ))}
-                        </SidebarMenu>
-                    </SidebarGroupContent>
-                </SidebarGroup>
+                {sections.map((section, index) => (
+                    <SidebarGroup key={section.label ?? `section-${index}`}>
+                        {section.label && <SidebarGroupLabel>{section.label}</SidebarGroupLabel>}
+                        <SidebarGroupContent>
+                            <SidebarMenu>
+                                {section.items.map((item) => (
+                                    <SidebarMenuItem key={item.url}>
+                                        <SidebarMenuButton
+                                            tooltip={item.title}
+                                            isActive={location.pathname === item.url}
+                                            render={<Link to={item.url} />}
+                                            className="h-9"
+                                        >
+                                            <item.icon />
+                                            <span>{item.title}</span>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                ))}
+                            </SidebarMenu>
+                        </SidebarGroupContent>
+                    </SidebarGroup>
+                ))}
             </SidebarContent>
+            <SidebarSeparator className="mx-0" />
             <SidebarFooter>
                 {user && (
                     <SidebarMenu>
