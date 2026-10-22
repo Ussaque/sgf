@@ -2,6 +2,7 @@ import type { Ref } from 'react';
 import type { Client, Company, DeliveryNoteItem, InvoiceItem } from '@/types';
 import { computeTotals } from '@/lib/document-totals';
 import { darkenForText, formatCurrency, formatDate } from '@/lib/utils';
+import { amountToWords } from '@/lib/number-to-words';
 import { printStyles } from './print-styles';
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
@@ -311,6 +312,9 @@ export function PrintableDocument({
                             {formatCurrency(receiptInfo.amount, company.default_currency)}
                         </span>
                     </div>
+                    <p className="border-t border-neutral-200 pt-2 text-neutral-600 italic">
+                        {amountToWords(receiptInfo.amount, company.default_currency)}
+                    </p>
                 </section>
             )}
 
