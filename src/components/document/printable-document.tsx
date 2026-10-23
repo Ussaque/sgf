@@ -21,7 +21,7 @@ type ReceiptInfo = {
 };
 
 interface PrintableDocumentProps {
-    documentType: 'FATURA' | 'RECIBO' | 'COTAÇÃO' | 'GUIA DE ENTREGA';
+    documentType: 'FACTURA' | 'RECIBO' | 'COTAÇÃO' | 'GUIA DE ENTREGA';
     company: Company;
     client: Client;
     number: string;

@@ -42,7 +42,7 @@ export default function InvoicePrint() {
             />
             <PrintableDocument
                 ref={documentRef}
-                documentType="FATURA"
+                documentType="FACTURA"
                 company={company}
                 client={client}
                 number={invoice.number}
