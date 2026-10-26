@@ -224,10 +224,7 @@ export function PrintableDocument({
                                         {formatCurrency(item.unit_price, company.default_currency)}
                                     </td>
                                     <td className="px-2 py-2 text-right font-mono">
-                                        {formatCurrency(
-                                            item.quantity * item.unit_price * (1 + item.tax_rate / 100),
-                                            company.default_currency
-                                        )}
+                                        {formatCurrency(item.quantity * item.unit_price, company.default_currency)}
                                     </td>
                                 </tr>
                             ))}

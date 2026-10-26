@@ -250,7 +250,7 @@ export default function Invoices() {
         }
         const items = values.items.map((item) => ({
             ...item,
-            total: item.quantity * item.unit_price * (1 + item.tax_rate / 100),
+            total: item.quantity * item.unit_price,
         }));
         const totals = computeTotals(items);
 

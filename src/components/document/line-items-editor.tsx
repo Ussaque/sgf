@@ -172,9 +172,7 @@ export function LineItemsEditor() {
                     <TableBody>
                         {fields.map((field, index) => {
                             const item = items[index];
-                            const lineTotal = item
-                                ? item.quantity * item.unit_price * (1 + item.tax_rate / 100)
-                                : 0;
+                            const lineTotal = item ? item.quantity * item.unit_price : 0;
                             return (
                                 <TableRow key={field.id}>
                                     <TableCell>
